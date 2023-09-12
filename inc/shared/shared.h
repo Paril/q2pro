@@ -121,6 +121,10 @@ q_noreturn q_printf(2, 3);
 #define PRINT_MEDIUM        1       // death messages
 #define PRINT_HIGH          2       // critical messages
 #define PRINT_CHAT          3       // chat messages    
+#define PRINT_TYPEWRITER    4       // centerprint but typed out one char at a time
+#define PRINT_CENTER        5       // centerprint without a separate function (loc variants only)
+#define PRINT_BROADCAST     8       // Bitflag, add to message to broadcast print to all clients.
+
 
 // destination class for gi.multicast()
 typedef enum {
