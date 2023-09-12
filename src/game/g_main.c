@@ -92,7 +92,7 @@ void G_RunFrame(void);
 
 void ShutdownGame(void)
 {
-    gi.dprintf("==== ShutdownGame ====\n");
+    gi.Com_Print("==== ShutdownGame ====\n");
 
     gi.FreeTags(TAG_LEVEL);
     gi.FreeTags(TAG_GAME);
@@ -111,7 +111,7 @@ void InitGame(void)
 {
     int features = G_FEATURES;
 
-    gi.dprintf("==== InitGame ====\n");
+    gi.Com_Print("==== InitGame ====\n");
 
     Q_srand(time(NULL));
 
@@ -252,7 +252,7 @@ void Com_LPrintf(print_type_t type, const char *fmt, ...)
     Q_vsnprintf(text, sizeof(text), fmt, argptr);
     va_end(argptr);
 
-    gi.dprintf("%s", text);
+    gi.Com_Print(text);
 }
 
 void Com_Error(error_type_t type, const char *fmt, ...)
@@ -411,7 +411,7 @@ void CheckDMRules(void)
 
     if (timelimit->value) {
         if (level.time >= timelimit->value * 60) {
-            gi.bprintf(PRINT_HIGH, "Timelimit hit.\n");
+            gi.Broadcast_Print(PRINT_HIGH, "Timelimit hit.\n");
             EndDMLevel();
             return;
         }
@@ -424,7 +424,7 @@ void CheckDMRules(void)
                 continue;
 
             if (cl->resp.score >= fraglimit->value) {
-                gi.bprintf(PRINT_HIGH, "Fraglimit hit.\n");
+                gi.Broadcast_Print(PRINT_HIGH, "Fraglimit hit.\n");
                 EndDMLevel();
                 return;
             }

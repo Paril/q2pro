@@ -345,7 +345,7 @@ void ED_CallSpawn(edict_t *ent)
     int     i;
 
     if (!ent->classname) {
-        gi.dprintf("ED_CallSpawn: NULL classname\n");
+        gi.Com_Print("ED_CallSpawn: NULL classname\n");
         return;
     }
 
@@ -368,7 +368,7 @@ void ED_CallSpawn(edict_t *ent)
             return;
         }
     }
-    gi.dprintf("%s doesn't have a spawn function\n", ent->classname);
+    gi.Com_Print(va("%s doesn't have a spawn function\n", ent->classname));
 }
 
 /*
@@ -424,7 +424,7 @@ static bool ED_ParseField(const spawn_field_t *fields, const char *key, const ch
                 break;
             case F_VECTOR:
                 if (sscanf(value, "%f %f %f", &vec[0], &vec[1], &vec[2]) != 3) {
-                    gi.dprintf("%s: couldn't parse '%s'\n", __func__, key);
+                    gi.Com_Print(va("%s: couldn't parse '%s'\n", __func__, key));
                     VectorClear(vec);
                 }
                 ((float *)(b + f->ofs))[0] = vec[0];
@@ -496,7 +496,7 @@ void ED_ParseEdict(const char **data, edict_t *ent)
 
         if (!ED_ParseField(spawn_fields, key, value, (byte *)ent)) {
             if (!ED_ParseField(temp_fields, key, value, (byte *)&st)) {
-                gi.dprintf("%s: %s is not a field\n", __func__, key);
+                gi.Com_Print(va("%s: %s is not a field\n", __func__, key));
             }
         }
     }
@@ -551,7 +551,7 @@ void G_FindTeams(void)
         }
     }
 
-    gi.dprintf("%i teams with %i entities\n", c, c2);
+    gi.Com_Print(va("%i teams with %i entities\n", c, c2));
 }
 
 /*
@@ -637,7 +637,7 @@ void SpawnEntities(const char *mapname, const char *entities, const char *spawnp
         ED_CallSpawn(ent);
     }
 
-    gi.dprintf("%i entities inhibited\n", inhibit);
+    gi.Com_Print(va("%i entities inhibited\n", inhibit));
 
 #ifdef DEBUG
     i = 1;
