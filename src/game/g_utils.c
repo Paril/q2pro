@@ -386,7 +386,7 @@ void G_TouchTriggers(edict_t *ent)
     if ((ent->client || (ent->svflags & SVF_MONSTER)) && (ent->health <= 0))
         return;
 
-    num = gi.BoxEdicts(ent->absmin, ent->absmax, touch, MAX_EDICTS, AREA_TRIGGERS);
+    num = gi.BoxEdicts(ent->absmin, ent->absmax, touch, MAX_EDICTS, AREA_TRIGGERS, NULL, NULL);
 
     // be careful, it is possible to have an entity in this
     // list removed before we get to it (killtriggered)
@@ -413,7 +413,7 @@ void G_TouchSolids(edict_t *ent)
     int         i, num;
     edict_t     *touch[MAX_EDICTS], *hit;
 
-    num = gi.BoxEdicts(ent->absmin, ent->absmax, touch, MAX_EDICTS, AREA_SOLID);
+    num = gi.BoxEdicts(ent->absmin, ent->absmax, touch, MAX_EDICTS, AREA_SOLID, NULL, NULL);
 
     // be careful, it is possible to have an entity in this
     // list removed before we get to it (killtriggered)
