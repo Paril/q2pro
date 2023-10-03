@@ -145,7 +145,7 @@ typedef struct {
     void (*configstring)(int num, const char *string);
     const char *(*get_configstring)(int num);
 
-    void (* q_noreturn q_printf(1, 2) error)(const char *fmt, ...);
+    void (* q_noreturn Com_Error)(const char *message);
 
     // the *index functions create configstrings and some internal server state
     int (*modelindex)(const char *name);
