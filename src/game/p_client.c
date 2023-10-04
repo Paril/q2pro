@@ -169,12 +169,12 @@ void player_pain(edict_t *self, edict_t *other, float kick, int damage)
 
 bool IsFemale(edict_t *ent)
 {
-    char        *info;
+    char        info[MAX_INFO_STRING];
 
     if (!ent->client)
         return false;
 
-    info = Info_ValueForKey(ent->client->pers.userinfo, "gender");
+    gi.Info_ValueForKey(ent->client->pers.userinfo, "gender", info, sizeof(info));
     if (info[0] == 'f' || info[0] == 'F')
         return true;
     return false;
@@ -182,12 +182,12 @@ bool IsFemale(edict_t *ent)
 
 bool IsNeutral(edict_t *ent)
 {
-    char        *info;
+    char        info[MAX_INFO_STRING];
 
     if (!ent->client)
         return false;
 
-    info = Info_ValueForKey(ent->client->pers.userinfo, "gender");
+    gi.Info_ValueForKey(ent->client->pers.userinfo, "gender", info, sizeof(info));
     if (info[0] != 'f' && info[0] != 'F' && info[0] != 'm' && info[0] != 'M')
         return true;
     return false;
@@ -961,7 +961,8 @@ void spectator_respawn(edict_t *ent)
     // exceed max_spectators
 
     if (ent->client->pers.spectator) {
-        char *value = Info_ValueForKey(ent->client->pers.userinfo, "spectator");
+        char value[MAX_INFO_STRING];
+        gi.Info_ValueForKey(ent->client->pers.userinfo, "spectator", value, sizeof(value));
         if (*spectator_password->string &&
             strcmp(spectator_password->string, "none") &&
             strcmp(spectator_password->string, value)) {
@@ -990,7 +991,8 @@ void spectator_respawn(edict_t *ent)
     } else {
         // he was a spectator and wants to join the game
         // he must have the right password
-        char *value = Info_ValueForKey(ent->client->pers.userinfo, "password");
+        char value[MAX_INFO_STRING];
+        gi.Info_ValueForKey(ent->client->pers.userinfo, "password", value, sizeof(value));
         if (*password->string && strcmp(password->string, "none") &&
             strcmp(password->string, value)) {
             gi.Client_Print(ent, PRINT_HIGH, "Password incorrect.\n");
@@ -1130,7 +1132,9 @@ void PutClientInServer(edict_t *ent)
     if (deathmatch->value && ((int)dmflags->value & DF_FIXED_FOV)) {
         client->ps.fov = 90;
     } else {
-        client->ps.fov = atoi(Info_ValueForKey(client->pers.userinfo, "fov"));
+        char value[MAX_INFO_STRING];
+        gi.Info_ValueForKey(client->pers.userinfo, "fov", value, sizeof(value));
+        client->ps.fov = atoi(value);
         if (client->ps.fov < 1)
             client->ps.fov = 90;
         else if (client->ps.fov > 160)
@@ -1317,20 +1321,15 @@ The game can override any of the settings in place
 */
 void ClientUserinfoChanged(edict_t *ent, char *userinfo)
 {
-    char    *s;
+    char    s[MAX_INFO_STRING];
     int     playernum;
 
-    // check for malformed or illegal info strings
-    if (!Info_Validate(userinfo)) {
-        strcpy(userinfo, "\\name\\badinfo\\skin\\male/grunt");
-    }
-
     // set name
-    s = Info_ValueForKey(userinfo, "name");
-    Q_strlcpy(ent->client->pers.netname, s, sizeof(ent->client->pers.netname));
+    if (!gi.Info_ValueForKey(userinfo, "name", ent->client->pers.netname, sizeof(ent->client->pers.netname)))
+        Q_strlcpy(ent->client->pers.netname, "badinfo", sizeof(ent->client->pers.netname));
 
     // set spectator
-    s = Info_ValueForKey(userinfo, "spectator");
+    gi.Info_ValueForKey(userinfo, "spectator", s, sizeof(s));
     // spectators are only supported in deathmatch
     if (deathmatch->value && *s && strcmp(s, "0"))
         ent->client->pers.spectator = true;
@@ -1338,7 +1337,8 @@ void ClientUserinfoChanged(edict_t *ent, char *userinfo)
         ent->client->pers.spectator = false;
 
     // set skin
-    s = Info_ValueForKey(userinfo, "skin");
+    if (!gi.Info_ValueForKey(userinfo, "skin", s, sizeof(s)))
+        Q_strlcpy(s, "male/grunt", sizeof(s));
 
     playernum = ent - g_edicts - 1;
 
@@ -1349,7 +1349,8 @@ void ClientUserinfoChanged(edict_t *ent, char *userinfo)
     if (deathmatch->value && ((int)dmflags->value & DF_FIXED_FOV)) {
         ent->client->ps.fov = 90;
     } else {
-        ent->client->ps.fov = atoi(Info_ValueForKey(userinfo, "fov"));
+        gi.Info_ValueForKey(userinfo, "fov", s, sizeof(s));
+        ent->client->ps.fov = atoi(s);
         if (ent->client->ps.fov < 1)
             ent->client->ps.fov = 90;
         else if (ent->client->ps.fov > 160)
@@ -1357,8 +1358,7 @@ void ClientUserinfoChanged(edict_t *ent, char *userinfo)
     }
 
     // handedness
-    s = Info_ValueForKey(userinfo, "hand");
-    if (strlen(s)) {
+    if (gi.Info_ValueForKey(userinfo, "hand", s, sizeof(s))) {
         ent->client->pers.hand = atoi(s);
     }
 
@@ -1380,24 +1380,24 @@ loadgames will.
 */
 qboolean ClientConnect(edict_t *ent, char *userinfo)
 {
-    char    *value;
+    char    value[MAX_INFO_STRING];
 
     // check to see if they are on the banned IP list
-    value = Info_ValueForKey(userinfo, "ip");
+    gi.Info_ValueForKey(userinfo, "ip", value, sizeof(value));
     if (SV_FilterPacket(value)) {
-        Info_SetValueForKey(userinfo, "rejmsg", "Banned.");
+        gi.Info_SetValueForKey(userinfo, "rejmsg", "Banned.");
         return false;
     }
 
     // check for a spectator
-    value = Info_ValueForKey(userinfo, "spectator");
+    gi.Info_ValueForKey(userinfo, "spectator", value, sizeof(value));
     if (deathmatch->value && *value && strcmp(value, "0")) {
         int i, numspec;
 
         if (*spectator_password->string &&
             strcmp(spectator_password->string, "none") &&
             strcmp(spectator_password->string, value)) {
-            Info_SetValueForKey(userinfo, "rejmsg", "Spectator password required or incorrect.");
+            gi.Info_SetValueForKey(userinfo, "rejmsg", "Spectator password required or incorrect.");
             return false;
         }
 
@@ -1407,15 +1407,15 @@ qboolean ClientConnect(edict_t *ent, char *userinfo)
                 numspec++;
 
         if (numspec >= maxspectators->value) {
-            Info_SetValueForKey(userinfo, "rejmsg", "Server spectator limit is full.");
+            gi.Info_SetValueForKey(userinfo, "rejmsg", "Server spectator limit is full.");
             return false;
         }
     } else {
         // check for a password
-        value = Info_ValueForKey(userinfo, "password");
+        gi.Info_ValueForKey(userinfo, "password", value, sizeof(value));
         if (*password->string && strcmp(password->string, "none") &&
             strcmp(password->string, value)) {
-            Info_SetValueForKey(userinfo, "rejmsg", "Password required or incorrect.");
+            gi.Info_SetValueForKey(userinfo, "rejmsg", "Password required or incorrect.");
             return false;
         }
     }
