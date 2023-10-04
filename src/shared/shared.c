@@ -995,8 +995,9 @@ fail:
 Info_RemoveKey
 ==================
 */
-void Info_RemoveKey(char *s, const char *key)
+bool Info_RemoveKey(char *s, const char *key)
 {
+    bool    found_one = false;
     char    *start;
     char    pkey[MAX_INFO_STRING];
     char    *o;
@@ -1008,7 +1009,7 @@ void Info_RemoveKey(char *s, const char *key)
         o = pkey;
         while (*s != '\\') {
             if (!*s)
-                return;
+                return found_one;
             *o++ = *s++;
         }
         *o = 0;
@@ -1025,13 +1026,15 @@ void Info_RemoveKey(char *s, const char *key)
             }
             *o = 0;
             s = start;
+            found_one = true;
             continue; // search for duplicates
         }
 
         if (!*s)
-            return;
+            return found_one;
     }
 
+    return found_one;
 }
 
 
