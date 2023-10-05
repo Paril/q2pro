@@ -970,7 +970,7 @@ void spectator_respawn(edict_t *ent)
             ent->client->pers.spectator = false;
             gi.WriteByte(svc_stufftext);
             gi.WriteString("spectator 0\n");
-            gi.unicast(ent, true);
+            gi.unicast(ent, true, 0);
             return;
         }
 
@@ -985,7 +985,7 @@ void spectator_respawn(edict_t *ent)
             // reset his spectator var
             gi.WriteByte(svc_stufftext);
             gi.WriteString("spectator 0\n");
-            gi.unicast(ent, true);
+            gi.unicast(ent, true, 0);
             return;
         }
     } else {
@@ -999,7 +999,7 @@ void spectator_respawn(edict_t *ent)
             ent->client->pers.spectator = true;
             gi.WriteByte(svc_stufftext);
             gi.WriteString("spectator 1\n");
-            gi.unicast(ent, true);
+            gi.unicast(ent, true, 0);
             return;
         }
     }
