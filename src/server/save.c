@@ -493,6 +493,9 @@ void SV_AutoSaveBegin(const mapcmd_t *cmd)
     if (no_save_games())
         return;
 
+    if (!ge->CanSave())
+        return;
+
     memset(bitmap, 0, sizeof(bitmap));
 
     // clear all the client inuse flags before saving so that
@@ -523,6 +526,9 @@ void SV_AutoSaveEnd(void)
         return;
 
     if (no_save_games())
+        return;
+
+    if (!ge->CanSave())
         return;
 
     // save server state
@@ -660,15 +666,8 @@ static void SV_Savegame_f(void)
         return;
     }
 
-    if (gex && gex->CanSave) {
-        if (!gex->CanSave())
-            return;
-    } else {
-        if (sv_maxclients->integer == 1 && svs.client_pool[0].edict->client->ps.stats[STAT_HEALTH] <= 0) {
-            Com_Printf("Can't savegame while dead!\n");
-            return;
-        }
-    }
+    if (!ge->CanSave())
+        return;
 
     if (Cmd_Argc() != 2) {
         Com_Printf("Usage: %s <directory>\n", Cmd_Argv(0));
