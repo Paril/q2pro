@@ -29,7 +29,6 @@ static cvar_t   *sv_noreload;
 
 static int write_server_file(bool autosave)
 {
-    char        name[MAX_OSPATH];
     cvar_t      *var;
     int         ret;
 
@@ -67,10 +66,17 @@ static int write_server_file(bool autosave)
         return -1;
 
     // write game state
-    if (Q_snprintf(name, MAX_OSPATH, "%s/save/" SAVE_CURRENT "/game.ssv", fs_gamedir) >= MAX_OSPATH)
+    size_t json_size = 0;
+    char *game_json = ge->WriteGameJson(autosave, &json_size);
+    if (!game_json)
         return -1;
 
-    ge->WriteGame(name, autosave);
+    ret = FS_WriteFile("save/" SAVE_CURRENT "/game.ssv",
+                       game_json, json_size);
+    Z_Free(game_json);
+    if (ret < 0)
+        return -1;
+
     return 0;
 }
 
@@ -124,10 +130,19 @@ static int write_level_file(void)
         return -1;
 
     // write game level
-    if (Q_snprintf(name, MAX_OSPATH, "%s/save/" SAVE_CURRENT "/%s.sav", fs_gamedir, sv.name) >= MAX_OSPATH)
+    size_t json_size = 0;
+    char *level_json = ge->WriteLevelJson(false, &json_size); // FIXME: transition flag
+    if (!level_json)
         return -1;
 
-    ge->WriteLevel(name);
+    if (Q_snprintf(name, MAX_QPATH, "save/" SAVE_CURRENT "/%s.sav", sv.name) >= MAX_QPATH)
+        ret = -1;
+    else
+        ret = FS_WriteFile(name, level_json, json_size);
+    Z_Free(level_json);
+
+    if (ret < 0)
+        return -1;
     return 0;
 }
 
@@ -306,6 +321,7 @@ static int read_server_file(void)
 {
     char        name[MAX_OSPATH], string[MAX_STRING_CHARS];
     mapcmd_t    cmd;
+    void        *buf;
 
     // errors like missing file, bad version, etc are
     // non-fatal and just return to the command handler
@@ -367,10 +383,11 @@ static int read_server_file(void)
         Com_Error(ERR_DROP, "Game does not support enhanced savegames");
 
     // read game state
-    if (Q_snprintf(name, MAX_OSPATH, "%s/save/" SAVE_CURRENT "/game.ssv", fs_gamedir) >= MAX_OSPATH)
-        Com_Error(ERR_DROP, "Savegame path too long");
-
-    ge->ReadGame(name);
+    FS_LoadFile("save/" SAVE_CURRENT "/game.ssv", (void **)&buf);
+    if (!buf)
+        Com_Error(ERR_DROP, "Couldn't read game.ssv");
+    ge->ReadGameJson(buf);
+    Z_Free(buf);
 
     // clear pending CM
     Com_AbortFunc(NULL, NULL);
@@ -436,10 +453,14 @@ static int read_level_file(void)
     FS_FreeFile(data);
 
     // read game level
-    if (Q_snprintf(name, MAX_OSPATH, "%s/save/" SAVE_CURRENT "/%s.sav", fs_gamedir, sv.name) >= MAX_OSPATH)
+    if (Q_snprintf(name, MAX_OSPATH, "save/" SAVE_CURRENT "/%s.sav", sv.name) >= MAX_OSPATH)
         Com_Error(ERR_DROP, "Savegame path too long");
 
-    ge->ReadLevel(name);
+    FS_LoadFile(name, (void **)&data);
+    if (!data)
+        Com_Error(ERR_DROP, "Couldn't read %s", name);
+    ge->ReadLevelJson(data);
+    Z_Free(data);
     return 0;
 }
 
