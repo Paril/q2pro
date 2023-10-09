@@ -906,10 +906,10 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
     }
 
     if (pflags & PS_M_TIME)
-        MSG_WriteByte(to->pmove.pm_time);
+        MSG_WriteByte(to->pmove.pm_time); // FIXME: Make short
 
     if (pflags & PS_M_FLAGS)
-        MSG_WriteByte(to->pmove.pm_flags);
+        MSG_WriteByte(to->pmove.pm_flags); // FIXME: Make short
 
     if (pflags & PS_M_GRAVITY)
         MSG_WriteShort(to->pmove.gravity);
@@ -1139,7 +1139,7 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
         MSG_WriteByte(to->pmove.pm_time);
 
     if (pflags & PS_M_FLAGS)
-        MSG_WriteByte(to->pmove.pm_flags);
+        MSG_WriteByte(to->pmove.pm_flags); // FIXME: Make short
 
     if (pflags & PS_M_GRAVITY)
         MSG_WriteShort(to->pmove.gravity);
@@ -2007,10 +2007,10 @@ void MSG_ParseDeltaPlayerstate_Default(const player_state_t *from,
     }
 
     if (flags & PS_M_TIME)
-        to->pmove.pm_time = MSG_ReadByte();
+        to->pmove.pm_time = MSG_ReadByte(); // FIXME: Make short
 
     if (flags & PS_M_FLAGS)
-        to->pmove.pm_flags = MSG_ReadByte();
+        to->pmove.pm_flags = MSG_ReadByte(); // FIXME: Make short
 
     if (flags & PS_M_GRAVITY)
         to->pmove.gravity = MSG_ReadShort();
@@ -2128,10 +2128,10 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
         to->pmove.velocity[2] = MSG_ReadCoord();
 
     if (flags & PS_M_TIME)
-        to->pmove.pm_time = MSG_ReadByte();
+        to->pmove.pm_time = MSG_ReadByte(); // FIXME: Make short
 
     if (flags & PS_M_FLAGS)
-        to->pmove.pm_flags = MSG_ReadByte();
+        to->pmove.pm_flags = MSG_ReadByte(); // FIXME: Make short
 
     if (flags & PS_M_GRAVITY)
         to->pmove.gravity = MSG_ReadShort();
