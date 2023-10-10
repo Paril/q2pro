@@ -207,6 +207,11 @@ void MSG_WriteAngle(float f)
     MSG_WriteByte(ANGLE2BYTE(f));
 }
 
+static inline void MSG_WriteAngle16(float f)
+{
+    MSG_WriteShort(ANGLE2SHORT(f));
+}
+
 #if USE_CLIENT
 
 /*
@@ -910,9 +915,9 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
         MSG_WriteShort(to->pmove.gravity);
 
     if (pflags & PS_M_DELTA_ANGLES) {
-        MSG_WriteShort(to->pmove.delta_angles[0]);
-        MSG_WriteShort(to->pmove.delta_angles[1]);
-        MSG_WriteShort(to->pmove.delta_angles[2]);
+        MSG_WriteAngle16(to->pmove.delta_angles[0]);
+        MSG_WriteAngle16(to->pmove.delta_angles[1]);
+        MSG_WriteAngle16(to->pmove.delta_angles[2]);
     }
 
     //
@@ -1140,9 +1145,9 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
         MSG_WriteShort(to->pmove.gravity);
 
     if (pflags & PS_M_DELTA_ANGLES) {
-        MSG_WriteShort(to->pmove.delta_angles[0]);
-        MSG_WriteShort(to->pmove.delta_angles[1]);
-        MSG_WriteShort(to->pmove.delta_angles[2]);
+        MSG_WriteAngle16(to->pmove.delta_angles[0]);
+        MSG_WriteAngle16(to->pmove.delta_angles[1]);
+        MSG_WriteAngle16(to->pmove.delta_angles[2]);
     }
 
     //
@@ -2011,9 +2016,9 @@ void MSG_ParseDeltaPlayerstate_Default(const player_state_t *from,
         to->pmove.gravity = MSG_ReadShort();
 
     if (flags & PS_M_DELTA_ANGLES) {
-        to->pmove.delta_angles[0] = MSG_ReadShort();
-        to->pmove.delta_angles[1] = MSG_ReadShort();
-        to->pmove.delta_angles[2] = MSG_ReadShort();
+        to->pmove.delta_angles[0] = MSG_ReadAngle16();
+        to->pmove.delta_angles[1] = MSG_ReadAngle16();
+        to->pmove.delta_angles[2] = MSG_ReadAngle16();
     }
 
     //
@@ -2132,9 +2137,9 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
         to->pmove.gravity = MSG_ReadShort();
 
     if (flags & PS_M_DELTA_ANGLES) {
-        to->pmove.delta_angles[0] = MSG_ReadShort();
-        to->pmove.delta_angles[1] = MSG_ReadShort();
-        to->pmove.delta_angles[2] = MSG_ReadShort();
+        to->pmove.delta_angles[0] = MSG_ReadAngle16();
+        to->pmove.delta_angles[1] = MSG_ReadAngle16();
+        to->pmove.delta_angles[2] = MSG_ReadAngle16();
     }
 
     //
