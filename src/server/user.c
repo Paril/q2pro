@@ -1565,7 +1565,7 @@ The current net_message is parsed for the given client
 */
 void SV_ExecuteClientMessage(client_t *client)
 {
-    int c;
+    int c, last_cmd = -1;
 
     sv_client = client;
     sv_player = sv_client->edict;
@@ -1590,6 +1590,7 @@ void SV_ExecuteClientMessage(client_t *client)
             case clc_move_nodelta:
             case clc_move_batched:
                 SV_NewClientExecuteMove(c);
+                last_cmd = c;
                 goto nextcmd;
             }
         }
@@ -1597,7 +1598,7 @@ void SV_ExecuteClientMessage(client_t *client)
         switch (c) {
         default:
 badbyte:
-            SV_DropClient(client, "unknown command byte");
+            SV_DropClient(client, va("unknown command byte, last was %i", last_cmd));
             break;
 
         case clc_nop:
@@ -1633,6 +1634,8 @@ badbyte:
 nextcmd:
         if (client->state <= cs_zombie)
             break;    // disconnect command
+
+        last_cmd = c;
     }
 
     sv_client = NULL;
