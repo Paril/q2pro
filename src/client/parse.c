@@ -1218,7 +1218,7 @@ CL_ParseServerMessage
 */
 void CL_ParseServerMessage(void)
 {
-    int         cmd, index, extrabits;
+    int         cmd, last_cmd = -1, index, extrabits;
     size_t      readcount;
     uint64_t    bits;
 
@@ -1255,7 +1255,7 @@ void CL_ParseServerMessage(void)
         switch (cmd) {
         default:
         badbyte:
-            Com_Error(ERR_DROP, "%s: illegible server message: %d", __func__, cmd);
+            Com_Error(ERR_DROP, "%s: illegible server message: %d, last good = %d", __func__, cmd, last_cmd);
             break;
 
         case svc_nop:
@@ -1379,6 +1379,8 @@ void CL_ParseServerMessage(void)
         // if running GTV server, add current message
         CL_GTV_WriteMessage(msg_read.data + readcount,
                             msg_read.readcount - readcount);
+
+        last_cmd = cmd;
     }
 }
 
