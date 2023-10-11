@@ -852,6 +852,9 @@ void MSG_PackPlayer(player_packed_t *out, const player_state_t *in)
     out->rdflags = in->rdflags;
     for (i = 0; i < MAX_STATS; i++)
         out->stats[i] = in->stats[i];
+// KEX
+    out->gunrate = (in->gunrate == 10) ? 0 : in->gunrate;
+// KEX
 }
 
 void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player_packed_t *to, msgPsFlags_t flags)
@@ -1020,7 +1023,7 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
 {
     int     i;
     int     pflags, eflags;
-    int     statbits;
+    int64_t statbits;
 
     Q_assert(to);
 
@@ -1139,6 +1142,16 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
     if (statbits)
         eflags |= EPS_STATS;
 
+// KEX
+    if (!(flags & MSG_PS_IGNORE_GUNFRAMES)) {
+        if (to->gunrate != from->gunrate)
+            eflags |= EPS_GUNRATE;
+    } else {
+        // save previous state
+        to->gunrate = from->gunrate;
+    }
+// KEX
+
     //
     // write it
     //
@@ -1241,11 +1254,17 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
 
     // send stats
     if (eflags & EPS_STATS) {
-        MSG_WriteLong(statbits);
+        MSG_WriteLong64(statbits);
         for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT(i))
+            if (statbits & BIT_ULL(i))
                 MSG_WriteShort(to->stats[i]);
     }
+
+// KEX
+    if (eflags & EPS_GUNRATE) {
+        MSG_WriteByte(to->gunrate);
+    }
+// KEX
 
     return eflags;
 }
@@ -2165,7 +2184,7 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
                                         msgPsFlags_t            psflags)
 {
     int         i;
-    int         statbits;
+    int64_t     statbits;
 
     Q_assert(to);
 
@@ -2273,11 +2292,17 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
 
     // parse stats
     if (extraflags & EPS_STATS) {
-        statbits = MSG_ReadLong();
+        statbits = MSG_ReadLong64();
         for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT(i))
+            if (statbits & BIT_ULL(i))
                 to->stats[i] = MSG_ReadShort();
     }
+
+// KEX
+    if (extraflags & EPS_GUNRATE) {
+        to->gunrate = MSG_ReadByte();
+    }
+// KEX
 }
 
 #endif // USE_CLIENT
@@ -2295,7 +2320,7 @@ void MSG_ParseDeltaPlayerstate_Packet(const player_state_t  *from,
                                       msgPsFlags_t          psflags)
 {
     int         i;
-    int         statbits;
+    int64_t     statbits;
 
     Q_assert(to);
 
@@ -2380,9 +2405,9 @@ void MSG_ParseDeltaPlayerstate_Packet(const player_state_t  *from,
 
     // parse stats
     if (flags & PPS_STATS) {
-        statbits = MSG_ReadLong();
+        statbits = MSG_ReadLong64();
         for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT(i))
+            if (statbits & BIT_ULL(i))
                 to->stats[i] = MSG_ReadShort();
     }
 }
