@@ -480,7 +480,7 @@ static inline int clip_byte(int v)
     return clamp(v, 0, 255);
 }
 
-void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, const entity_state_extension_t *ext)
+void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, bool ext)
 {
     // allow 0 to accomodate empty baselines
     Q_assert(in->number >= 0 && in->number < MAX_EDICTS);
@@ -506,15 +506,15 @@ void MSG_PackEntity(entity_packed_t *out, const entity_state_t *in, const entity
     out->sound = in->sound;
     out->event = in->event;
     if (ext) {
-        out->morefx = ext->morefx;
-        out->alpha = clip_byte(ext->alpha * 255.0f);
-        out->scale = clip_byte(ext->scale * 16.0f);
-        out->loop_volume = clip_byte(ext->loop_volume * 255.0f);
+        out->morefx = in->morefx;
+        out->alpha = clip_byte(in->alpha * 255.0f);
+        out->scale = clip_byte(in->scale * 16.0f);
+        out->loop_volume = clip_byte(in->loop_volume * 255.0f);
         // encode ATTN_STATIC (192) as 0, and ATTN_LOOP_NONE (-1) as 192
-        if (ext->loop_attenuation == ATTN_LOOP_NONE) {
+        if (in->loop_attenuation == ATTN_LOOP_NONE) {
             out->loop_attenuation = 192;
         } else {
-            out->loop_attenuation = clip_byte(ext->loop_attenuation * 64.0f);
+            out->loop_attenuation = clip_byte(in->loop_attenuation * 64.0f);
             if (out->loop_attenuation == 192)
                 out->loop_attenuation = 0;
         }
@@ -1896,7 +1896,6 @@ Can go from either a baseline or a previous packet_entity
 ==================
 */
 void MSG_ParseDeltaEntity(entity_state_t            *to,
-                          entity_state_extension_t  *ext,
                           int                       number,
                           uint64_t                  bits,
                           msgEsFlags_t              flags)
@@ -1971,13 +1970,13 @@ void MSG_ParseDeltaEntity(entity_state_t            *to,
             int w = MSG_ReadWord();
             to->sound = w & 0x3fff;
             if (w & 0x4000)
-                ext->loop_volume = MSG_ReadByte() / 255.0f;
+                to->loop_volume = MSG_ReadByte() / 255.0f;
             if (w & 0x8000) {
                 int b = MSG_ReadByte();
                 if (b == 192)
-                    ext->loop_attenuation = ATTN_LOOP_NONE;
+                    to->loop_attenuation = ATTN_LOOP_NONE;
                 else
-                    ext->loop_attenuation = b / 64.0f;
+                    to->loop_attenuation = b / 64.0f;
             }
         } else {
             to->sound = MSG_ReadByte();
@@ -1996,17 +1995,17 @@ void MSG_ParseDeltaEntity(entity_state_t            *to,
 
     if (flags & MSG_ES_EXTENSIONS) {
         if ((bits & U_MOREFX32) == U_MOREFX32)
-            ext->morefx = MSG_ReadLong();
+            to->morefx = MSG_ReadLong();
         else if (bits & U_MOREFX8)
-            ext->morefx = MSG_ReadByte();
+            to->morefx = MSG_ReadByte();
         else if (bits & U_MOREFX16)
-            ext->morefx = MSG_ReadWord();
+            to->morefx = MSG_ReadWord();
 
         if (bits & U_ALPHA)
-            ext->alpha = MSG_ReadByte() / 255.0f;
+            to->alpha = MSG_ReadByte() / 255.0f;
 
         if (bits & U_SCALE)
-            ext->scale = MSG_ReadByte() / 16.0f;
+            to->scale = MSG_ReadByte() / 16.0f;
     }
 }
 

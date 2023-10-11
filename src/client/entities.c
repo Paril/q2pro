@@ -34,7 +34,7 @@ FRAME PARSING
 */
 
 // returns true if origin/angles update has been optimized out
-static inline bool entity_is_optimized(const centity_state_t *state)
+static inline bool entity_is_optimized(const entity_state_t *state)
 {
     return cls.serverProtocol == PROTOCOL_VERSION_Q2PRO
         && state->number == cl.frame.clientNum + 1
@@ -42,7 +42,7 @@ static inline bool entity_is_optimized(const centity_state_t *state)
 }
 
 static inline void
-entity_update_new(centity_t *ent, const centity_state_t *state, const vec_t *origin)
+entity_update_new(centity_t *ent, const entity_state_t *state, const vec_t *origin)
 {
     ent->trailcount = 1024;     // for diminishing rocket / grenade trails
     ent->flashlightfrac = 1.0f;
@@ -69,7 +69,7 @@ entity_update_new(centity_t *ent, const centity_state_t *state, const vec_t *ori
 }
 
 static inline void
-entity_update_old(centity_t *ent, const centity_state_t *state, const vec_t *origin)
+entity_update_old(centity_t *ent, const entity_state_t *state, const vec_t *origin)
 {
     int event = state->event;
 
@@ -139,7 +139,7 @@ static inline bool entity_is_new(const centity_t *ent)
     return false;
 }
 
-static void parse_entity_update(const centity_state_t *state)
+static void parse_entity_update(const entity_state_t *state)
 {
     centity_t *ent = &cl_entities[state->number];
     const vec_t *origin;
@@ -183,7 +183,7 @@ static void parse_entity_update(const centity_state_t *state)
 
     // work around Q2PRO server bandwidth optimization
     if (entity_is_optimized(state)) {
-        Com_PlayerToEntityState(&cl.frame.ps, &ent->current.s);
+        Com_PlayerToEntityState(&cl.frame.ps, &ent->current);
     }
 }
 
@@ -366,7 +366,7 @@ A valid frame has been parsed.
 void CL_DeltaFrame(void)
 {
     centity_t           *ent;
-    centity_state_t     *state;
+    entity_state_t      *state;
     int                 i, j;
     int                 framenum;
     int                 prevstate = cls.state;
@@ -389,7 +389,7 @@ void CL_DeltaFrame(void)
     // this is needed in situations when player entity is invisible, but
     // server sends an effect referencing it's origin (such as MZ_LOGIN, etc)
     ent = &cl_entities[cl.frame.clientNum + 1];
-    Com_PlayerToEntityState(&cl.frame.ps, &ent->current.s);
+    Com_PlayerToEntityState(&cl.frame.ps, &ent->current);
 
     for (i = 0; i < cl.frame.numEntities; i++) {
         j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
@@ -478,7 +478,7 @@ CL_AddPacketEntities
 static void CL_AddPacketEntities(void)
 {
     entity_t            ent;
-    centity_state_t     *s1;
+    entity_state_t      *s1;
     float               autorotate, autobob;
     int                 i;
     int                 pnum;
