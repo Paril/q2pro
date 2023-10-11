@@ -611,14 +611,16 @@ static void emit_gamestate(void)
     // pack MVD stream flags into extra bits
     extra = 0;
     if (sv_mvd_nomsgs->integer && mvd.dummy) {
-        extra |= MVF_NOMSGS << SVCMD_BITS;
+        extra |= MVF_NOMSGS;
     }
     if (svs.csr.extended) {
-        extra |= MVF_EXTLIMITS << SVCMD_BITS;
+        extra |= MVF_EXTLIMITS;
     }
 
     // send the serverdata
-    MSG_WriteByte(mvd_serverdata | extra);
+    MSG_WriteByte(mvd_serverdata | (extra ? 128 : 0));
+    if (extra)
+        MSG_WriteByte(extra);
     MSG_WriteLong(PROTOCOL_VERSION_MVD);
     if (svs.csr.extended)
         MSG_WriteShort(PROTOCOL_VERSION_MVD_CURRENT);
@@ -1132,7 +1134,9 @@ void SV_MvdMulticast(int leafnum, multicast_t to, bool reliable)
     buf = reliable ? &mvd.datagram : &mvd.message;
     bits = (msg_write.cursize >> 8) & 7;
 
-    SZ_WriteByte(buf, op | (bits << SVCMD_BITS));
+    SZ_WriteByte(buf, op | (bits ? 128 : 0));
+    if (bits)
+        SZ_WriteByte(buf, bits);
     SZ_WriteByte(buf, msg_write.cursize & 255);
 
     if (op != mvd_multicast_all && op != mvd_multicast_all_r) {
@@ -1215,7 +1219,9 @@ void SV_MvdUnicast(edict_t *ent, int clientNum, bool reliable)
 
     // write it
     bits = (msg_write.cursize >> 8) & 7;
-    SZ_WriteByte(buf, op | (bits << SVCMD_BITS));
+    SZ_WriteByte(buf, op | (bits ? 128 : 0));
+    if (bits)
+        SZ_WriteByte(buf, bits);
     SZ_WriteByte(buf, msg_write.cursize & 255);
     SZ_WriteByte(buf, clientNum);
     SZ_Write(buf, msg_write.data, msg_write.cursize);
@@ -1270,14 +1276,16 @@ void SV_MvdStartSound(int entnum, int channel, int flags,
 
     extrabits = 0;
     if (channel & CHAN_NO_PHS_ADD) {
-        extrabits |= 1 << SVCMD_BITS;
+        extrabits |= 1;
     }
     if (channel & CHAN_RELIABLE) {
         // FIXME: write to mvd.message
-        extrabits |= 2 << SVCMD_BITS;
+        extrabits |= 2;
     }
 
-    SZ_WriteByte(&mvd.datagram, mvd_sound | extrabits);
+    SZ_WriteByte(&mvd.datagram, mvd_sound | (extrabits ? 128 : 0));
+    if (extrabits)
+        SZ_WriteByte(&mvd.datagram, extrabits);
     SZ_WriteByte(&mvd.datagram, flags);
     if (flags & SND_INDEX16)
         SZ_WriteShort(&mvd.datagram, soundindex);
