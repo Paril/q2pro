@@ -26,6 +26,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <malloc.h>
 #include <stdlib.h>
 
+extern cvar_t *g_features;
+
 static void sync_single_edict_server_to_game(int index);
 static void sync_edicts_server_to_game(void);
 static void sync_single_edict_game_to_server(int index);
@@ -257,17 +259,25 @@ static void wrap_local_sound(game3_edict_t *target, const vec3_t origin, game3_e
 // Map configstring IDs from "old" to "new"
 static int map_configstring_id(int index)
 {
-    return remap_cs_index(index, &cs_remap_old, &cs_remap_rerelease);
+    // Games with Q2PRO extensions use different limits/configstring IDs
+    const cs_remap_t *cs_remap_from = (g_features->integer & GMF_PROTOCOL_EXTENSIONS) ? &cs_remap_q2pro_new : &cs_remap_old;
+    return remap_cs_index(index, cs_remap_from, &cs_remap_rerelease);
 }
 
 static void wrap_configstring(int index, const char* str)
 {
-    game_import.configstring(map_configstring_id(index), str);
+    int mapped_idx = map_configstring_id(index);
+    if (mapped_idx < 0)
+        return;
+    game_import.configstring(mapped_idx, str);
 }
 
 static const char *wrap_get_configstring(int index)
 {
-    return game_import.get_configstring(map_configstring_id(index));
+    int mapped_idx = map_configstring_id(index);
+    if (mapped_idx < 0)
+        return "";
+    return game_import.get_configstring(mapped_idx);
 }
 
 static trace_t wrap_clip(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, game3_edict_t *clip, int contentmask)
