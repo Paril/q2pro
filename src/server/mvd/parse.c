@@ -542,12 +542,6 @@ static void MVD_ParseSound(mvd_t *mvd, int extrabits)
             continue;
         }
 
-        // default client doesn't know that bmodels have weird origins
-        if (entity->solid == SOLID_BSP && cl->protocol == PROTOCOL_VERSION_DEFAULT) {
-            SV_ClientAddMessage(cl, 0);
-            continue;
-        }
-
         if (LIST_EMPTY(&cl->msg_free_list)) {
             Com_WPrintf("%s: %s: out of message slots\n",
                         __func__, cl->name);

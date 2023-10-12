@@ -28,7 +28,7 @@ Encode a client frame onto the network channel
 
 // some protocol optimizations are disabled when recording a demo
 #define Q2PRO_OPTIMIZE(c) \
-    (((c)->protocol == PROTOCOL_VERSION_Q2PRO || (c)->protocol == PROTOCOL_VERSION_RERELEASE) && !(c)->settings[CLS_RECORDING])
+    (!(c)->settings[CLS_RECORDING])
 
 /*
 =============
@@ -271,17 +271,13 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     }
 
     clientEntityNum = 0;
-    if (client->protocol == PROTOCOL_VERSION_Q2PRO || client->protocol == PROTOCOL_VERSION_RERELEASE) {
-        if (frame->ps.pmove.pm_type < PM_DEAD && !client->settings[CLS_RECORDING]) {
-            clientEntityNum = frame->clientNum + 1;
-        }
-        if (client->settings[CLS_NOPREDICT]) {
-            psFlags |= MSG_PS_IGNORE_PREDICTION;
-        }
-        suppressed = client->frameflags;
-    } else {
-        suppressed = client->suppress_count;
+    if (frame->ps.pmove.pm_type < PM_DEAD && !client->settings[CLS_RECORDING]) {
+        clientEntityNum = frame->clientNum + 1;
     }
+    if (client->settings[CLS_NOPREDICT]) {
+        psFlags |= MSG_PS_IGNORE_PREDICTION;
+    }
+    suppressed = client->frameflags;
     if (client->csr->extended) {
         psFlags |= MSG_PS_EXTENSIONS;
     }
@@ -289,16 +285,10 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     // delta encode the playerstate
     extraflags = MSG_WriteDeltaPlayerstate_Enhanced(oldstate, &frame->ps, psFlags);
 
-    if (client->protocol == PROTOCOL_VERSION_Q2PRO || client->protocol == PROTOCOL_VERSION_RERELEASE) {
-        // delta encode the clientNum
-        if ((oldframe ? oldframe->clientNum : 0) != frame->clientNum) {
-            extraflags |= EPS_CLIENTNUM;
-            if (client->version < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT) {
-                MSG_WriteByte(frame->clientNum);
-            } else {
-                MSG_WriteShort(frame->clientNum);
-            }
-        }
+    // delta encode the clientNum
+    if ((oldframe ? oldframe->clientNum : 0) != frame->clientNum) {
+        extraflags |= EPS_CLIENTNUM;
+        MSG_WriteShort(frame->clientNum);
     }
 
     // save 3 high bits of extraflags
@@ -444,7 +434,7 @@ void SV_BuildClientFrame(client_t *client)
 
     // calculate the visible areas
     frame->areabytes = CM_WriteAreaBits(client->cm, frame->areabits, clientarea);
-    if (!frame->areabytes && client->protocol != PROTOCOL_VERSION_Q2PRO && client->protocol != PROTOCOL_VERSION_RERELEASE) {
+    if (!frame->areabytes) {
         frame->areabits[0] = 255;
         frame->areabytes = 1;
     }
@@ -463,11 +453,6 @@ void SV_BuildClientFrame(client_t *client)
     } else {
         frame->clientNum = client->number;
     }
-
-    // fix clientNum if out of range for older version of Q2PRO protocol
-    need_clientnum_fix = client->protocol == PROTOCOL_VERSION_Q2PRO
-        && client->version < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT
-        && frame->clientNum >= CLIENTNUM_NONE;
 
     // limit maximum number of entities in client frame
     max_packet_entities =
@@ -565,7 +550,7 @@ void SV_BuildClientFrame(client_t *client)
 
         // hide POV entity from renderer, unless this is player's own entity
         if (e == frame->clientNum + 1 && ent != clent &&
-            (!Q2PRO_OPTIMIZE(client) || need_clientnum_fix)) {
+            (!Q2PRO_OPTIMIZE(client))) {
             state->modelindex = 0;
         }
 
@@ -589,7 +574,4 @@ void SV_BuildClientFrame(client_t *client)
             break;
         }
     }
-
-    if (need_clientnum_fix)
-        frame->clientNum = client->slot;
 }

@@ -393,49 +393,12 @@ void SV_New_f(void)
     MSG_WriteString(sv_client->configstrings[CS_NAME]);
 
     // send protocol specific stuff
-    switch (sv_client->protocol) {
-    case PROTOCOL_VERSION_R1Q2:
-        MSG_WriteByte(0);   // not enhanced
-        MSG_WriteShort(sv_client->version);
-        MSG_WriteByte(0);   // no advanced deltas
-        MSG_WriteByte(sv_client->pmp.strafehack);
-        break;
-    case PROTOCOL_VERSION_Q2PRO:
-        MSG_WriteShort(sv_client->version);
-        if (sv.state == ss_cinematic && sv_client->version < PROTOCOL_VERSION_Q2PRO_CINEMATICS)
-            MSG_WriteByte(ss_pic);
-        else
-            MSG_WriteByte(sv.state);
-        if (sv_client->version >= PROTOCOL_VERSION_Q2PRO_EXTENDED_LIMITS) {
-            MSG_WriteShort(q2pro_protocol_flags());
-// KEX
-            if (svs.csr.extended)
-                MSG_WriteByte(SV_FRAMERATE);
-// KEX
-        } else {
-            MSG_WriteByte(sv_client->pmp.strafehack);
-            MSG_WriteByte(sv_client->pmp.qwmode);
-            MSG_WriteByte(sv_client->pmp.waterhack);
-        }
-        break;
-    case PROTOCOL_VERSION_RERELEASE:
-        MSG_WriteShort(sv_client->version);
-        MSG_WriteByte(sv.state);
-        MSG_WriteShort(q2pro_protocol_flags());
-        MSG_WriteByte(SV_FRAMERATE);
-    }
+    MSG_WriteShort(sv_client->version);
+    MSG_WriteByte(sv.state);
+    MSG_WriteShort(q2pro_protocol_flags());
+    MSG_WriteByte(SV_FRAMERATE);
 
     SV_ClientAddMessage(sv_client, MSG_RELIABLE | MSG_CLEAR);
-
-    if (sv_client->protocol == PROTOCOL_VERSION_Q2PRO &&
-        sv_client->version < PROTOCOL_VERSION_Q2PRO_CLIENTNUM_SHORT &&
-        sv_client->slot == CLIENTNUM_NONE && oldstate == cs_assigned)
-    {
-        SV_ClientPrintf(sv_client, PRINT_HIGH,
-                        "WARNING: Server has allocated client slot number 255. "
-                        "This is known to be broken in your Q2PRO client version. "
-                        "Please update your client to latest version.\n");
-    }
 
     SV_ClientCommand(sv_client, "\n");
 
@@ -471,12 +434,8 @@ void SV_New_f(void)
 
     // send gamestate
     if (sv_client->netchan.type == NETCHAN_NEW) {
-        if (sv_client->version >= PROTOCOL_VERSION_Q2PRO_EXTENDED_LIMITS) {
-            write_configstring_stream();
-            write_baseline_stream();
-        } else {
-            write_gamestate();
-        }
+        write_configstring_stream();
+        write_baseline_stream();
     } else {
         write_configstrings();
         write_baselines();
@@ -647,9 +606,7 @@ static void SV_BeginDownload_f(void)
 
 #if USE_ZLIB
     // prefer raw deflate stream from .pkz if supported
-    if (sv_client->protocol == PROTOCOL_VERSION_Q2PRO &&
-        sv_client->version >= PROTOCOL_VERSION_Q2PRO_ZLIB_DOWNLOADS &&
-        sv_client->has_zlib && offset == 0) {
+    if (sv_client->has_zlib && offset == 0) {
         downloadsize = FS_OpenFile(name, &f, FS_MODE_READ | FS_FLAG_DEFLATE);
         if (f) {
             Com_DPrintf("Serving compressed download to %s\n", sv_client->name);
@@ -1172,23 +1129,12 @@ static void SV_OldClientExecuteMove(void)
 
     moveIssued = true;
 
-    if (sv_client->protocol == PROTOCOL_VERSION_DEFAULT) {
-        MSG_ReadByte();    // skip over checksum
-    }
-
     lastframe = MSG_ReadLong();
 
     // read all cmds
-    if (sv_client->protocol == PROTOCOL_VERSION_R1Q2 &&
-        sv_client->version >= PROTOCOL_VERSION_R1Q2_UCMD) {
-        MSG_ReadDeltaUsercmd_Hacked(NULL, &oldest);
-        MSG_ReadDeltaUsercmd_Hacked(&oldest, &oldcmd);
-        MSG_ReadDeltaUsercmd_Hacked(&oldcmd, &newcmd);
-    } else {
-        MSG_ReadDeltaUsercmd(NULL, &oldest);
-        MSG_ReadDeltaUsercmd(&oldest, &oldcmd);
-        MSG_ReadDeltaUsercmd(&oldcmd, &newcmd);
-    }
+    MSG_ReadDeltaUsercmd(NULL, &oldest);
+    MSG_ReadDeltaUsercmd(&oldest, &oldcmd);
+    MSG_ReadDeltaUsercmd(&oldcmd, &newcmd);
 
     if (sv_client->state != cs_spawned) {
         SV_SetLastFrame(-1);
@@ -1593,14 +1539,12 @@ void SV_ExecuteClientMessage(client_t *client)
         if (c == -1)
             break;
 
-        if (client->protocol == PROTOCOL_VERSION_Q2PRO) {
-            switch (c) {
-            case clc_move_nodelta:
-            case clc_move_batched:
-                SV_NewClientExecuteMove(c);
-                last_cmd = c;
-                goto nextcmd;
-            }
+        switch (c) {
+        case clc_move_nodelta:
+        case clc_move_batched:
+            SV_NewClientExecuteMove(c);
+            last_cmd = c;
+            goto nextcmd;
         }
 
         switch (c) {
@@ -1625,16 +1569,10 @@ badbyte:
             break;
 
         case clc_setting:
-            if (client->protocol < PROTOCOL_VERSION_R1Q2)
-                goto badbyte;
-
             SV_ParseClientSetting();
             break;
 
         case clc_userinfo_delta:
-            if (client->protocol != PROTOCOL_VERSION_Q2PRO)
-                goto badbyte;
-
             SV_ParseDeltaUserinfo();
             break;
         }

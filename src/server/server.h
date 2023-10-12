@@ -186,11 +186,6 @@ typedef struct {
 
 #define MAX_TOTAL_ENT_LEAFS        128
 
-#define CLIENT_COMPATIBLE(csr, c) \
-    (!(csr)->extended || (((c)->protocol == PROTOCOL_VERSION_Q2PRO && \
-                           (c)->version >= PROTOCOL_VERSION_Q2PRO_EXTENDED_LIMITS)) \
-                          || ((c)->protocol == PROTOCOL_VERSION_RERELEASE))
-
 typedef enum {
     cs_free,        // can be reused for a new connection
     cs_zombie,      // client has been disconnected, but don't reuse
