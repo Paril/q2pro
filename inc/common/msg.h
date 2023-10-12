@@ -158,7 +158,6 @@ void    MSG_ReadDir(vec3_t vector);
 #endif
 int     MSG_ReadBits(int bits);
 void    MSG_ReadDeltaUsercmd(const usercmd_t *from, usercmd_t *cmd);
-void    MSG_ReadDeltaUsercmd_Hacked(const usercmd_t *from, usercmd_t *to);
 void    MSG_ReadDeltaUsercmd_Enhanced(const usercmd_t *from, usercmd_t *to);
 int     MSG_ParseEntityBits(uint64_t *bits, msgEsFlags_t flags);
 void    MSG_ParseDeltaEntity(entity_state_t *to, int number, uint64_t bits, msgEsFlags_t flags);
