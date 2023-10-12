@@ -257,7 +257,7 @@ static void wrap_local_sound(game3_edict_t *target, const vec3_t origin, game3_e
 // Map configstring IDs from "old" to "new"
 static int map_configstring_id(int index)
 {
-    return remap_cs_index(index, &cs_remap_old, &cs_remap_new);
+    return remap_cs_index(index, &cs_remap_old, &cs_remap_rerelease);
 }
 
 static void wrap_configstring(int index, const char* str)

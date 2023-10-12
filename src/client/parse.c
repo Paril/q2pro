@@ -527,7 +527,7 @@ static void CL_ParseServerData(void)
         }
         // BIG HACK to let demos from release work with the 3.0x patch!!!
         if (protocol == PROTOCOL_VERSION_EXTENDED) {
-            cl.csr = cs_remap_new;
+            cl.csr = cs_remap_q2pro_new;
             protocol = PROTOCOL_VERSION_DEFAULT;
         } else if (protocol < PROTOCOL_VERSION_OLD || protocol > PROTOCOL_VERSION_DEFAULT) {
             Com_Error(ERR_DROP, "Demo uses unsupported protocol version %d.", protocol);
@@ -633,7 +633,7 @@ static void CL_ParseServerData(void)
             }
             if (i & Q2PRO_PF_EXTENSIONS) {
                 Com_DPrintf("Q2PRO protocol extensions enabled\n");
-                cl.csr = cs_remap_new;
+                cl.csr = cs_remap_rerelease; // FIXME: Use cs_remap_q2pro_new
 
                 int32_t rate = MSG_ReadByte();
                 cl.sv_frametime = (1.0f / rate) * 1000;

@@ -1087,7 +1087,7 @@ void SV_InitGameProgs(void)
 
     if (g_features->integer & GMF_PROTOCOL_EXTENSIONS) {
         Com_Printf("Game supports Q2PRO protocol extensions.\n");
-        svs.csr = cs_remap_new;
+        svs.csr = cs_remap_rerelease; // FIXME: Choose cs_remap_q2pro_new if appropriate
     }
 
     // sanitize edict_size

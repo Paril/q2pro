@@ -1500,7 +1500,7 @@ const cs_remap_t cs_remap_old = {
     .end         = MAX_CONFIGSTRINGS_OLD
 };
 
-const cs_remap_t cs_remap_new = {
+const cs_remap_t cs_remap_rerelease = {
     .extended    = true,
 
     .max_edicts  = MAX_EDICTS,
@@ -1529,6 +1529,50 @@ const cs_remap_t cs_remap_new = {
     .gamestyle   = CS_GAME_STYLE,
 
     .end         = MAX_CONFIGSTRINGS
+};
+
+#define MAX_IMAGES_EX           2048
+#define CS_AIRACCEL_EX          CS_AIRACCEL
+#define CS_MAXCLIENTS_EX        CS_MAXCLIENTS
+#define CS_MAPCHECKSUM_EX       CS_MAPCHECKSUM
+#define CS_MODELS_EX            CS_MODELS
+#define CS_SOUNDS_EX            CS_SOUNDS
+#define CS_IMAGES_EX            CS_IMAGES
+#define CS_LIGHTS_EX            (CS_IMAGES_EX + MAX_IMAGES_EX)
+#define CS_ITEMS_EX             (CS_LIGHTS_EX + MAX_LIGHTSTYLES)
+#define CS_PLAYERSKINS_EX       (CS_ITEMS_EX + MAX_ITEMS)
+#define CS_GENERAL_EX           (CS_PLAYERSKINS_EX + MAX_CLIENTS)
+#define MAX_CONFIGSTRINGS_EX    (CS_GENERAL_EX + MAX_GENERAL)
+
+const cs_remap_t cs_remap_q2pro_new = {
+    .extended    = true,
+
+    .max_edicts  = MAX_EDICTS,
+    .max_models  = MAX_MODELS,
+    .max_sounds  = MAX_SOUNDS,
+    .max_images  = MAX_IMAGES_EX,
+    .max_shadowlights = 0,
+    .max_wheelitems = 0,
+
+    .airaccel    = CS_AIRACCEL_EX,
+    .maxclients  = CS_MAXCLIENTS_EX,
+    .mapchecksum = CS_MAPCHECKSUM_EX,
+
+    .models      = CS_MODELS_EX,
+    .sounds      = CS_SOUNDS_EX,
+    .images      = CS_IMAGES_EX,
+    .lights      = CS_LIGHTS_EX,
+    .shadowlights = -1,
+    .items       = CS_ITEMS_EX,
+    .playerskins = CS_PLAYERSKINS_EX,
+    .general     = CS_GENERAL_EX,
+    .wheelweapons = -1,
+    .wheelammo   = -1,
+    .wheelpowerups = -1,
+    .cdloopcount = -1,
+    .gamestyle   = -1,
+
+    .end         = MAX_CONFIGSTRINGS_EX
 };
 
 static int index_remap(int index, int old_start, int new_start, int max_indices)
