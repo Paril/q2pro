@@ -281,6 +281,7 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     if (client->csr->extended) {
         psFlags |= MSG_PS_EXTENSIONS;
     }
+    psFlags |= MSG_PS_FLOAT_COORDS;
 
     // delta encode the playerstate
     extraflags = MSG_WriteDeltaPlayerstate_Enhanced(oldstate, &frame->ps, psFlags);
