@@ -163,7 +163,7 @@ static void write_configstring_stream(void)
     char    *string;
     size_t  length;
 
-    MSG_WriteByte(svc_configstringstream);
+    MSG_WriteByte(svc_rr_configstringstream);
 
     // write a packet full of data
     for (i = 0; i < sv_client->csr->end; i++) {
@@ -177,7 +177,7 @@ static void write_configstring_stream(void)
         if (msg_write.cursize + length + 4 > msg_write.maxsize) {
             MSG_WriteShort(sv_client->csr->end);
             SV_ClientAddMessage(sv_client, MSG_GAMESTATE);
-            MSG_WriteByte(svc_configstringstream);
+            MSG_WriteByte(svc_rr_configstringstream);
         }
 
         MSG_WriteShort(i);
@@ -194,7 +194,7 @@ static void write_baseline_stream(void)
     int i, j;
     entity_packed_t *base;
 
-    MSG_WriteByte(svc_baselinestream);
+    MSG_WriteByte(svc_rr_baselinestream);
 
     // write a packet full of data
     for (i = 0; i < SV_BASELINES_CHUNKS; i++) {
@@ -210,7 +210,7 @@ static void write_baseline_stream(void)
             if (msg_write.cursize + MAX_PACKETENTITY_BYTES > msg_write.maxsize) {
                 MSG_WriteShort(0);
                 SV_ClientAddMessage(sv_client, MSG_GAMESTATE);
-                MSG_WriteByte(svc_baselinestream);
+                MSG_WriteByte(svc_rr_baselinestream);
             }
             write_baseline(base);
         }
@@ -227,7 +227,7 @@ static void write_gamestate(void)
     size_t      length;
     char        *string;
 
-    MSG_WriteByte(svc_gamestate);
+    MSG_WriteByte(svc_rr_gamestate);
 
     // write configstrings
     for (i = 0; i < sv_client->csr->end; i++) {
@@ -610,7 +610,7 @@ static void SV_BeginDownload_f(void)
         downloadsize = FS_OpenFile(name, &f, FS_MODE_READ | FS_FLAG_DEFLATE);
         if (f) {
             Com_DPrintf("Serving compressed download to %s\n", sv_client->name);
-            downloadcmd = svc_zdownload;
+            downloadcmd = svc_rr_zdownload;
         }
     }
 #endif

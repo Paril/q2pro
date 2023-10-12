@@ -162,16 +162,24 @@ typedef enum {
     svc_bot_chat,               // [Kex] bot specific chat
 // KEX
 
-// FIXME these got bumped
+    // Same meaning as "r1q2 specific operations" below, but different values
+    svc_rr_zpacket = 34,
+    svc_rr_zdownload,
+    svc_rr_gamestate,
+    svc_rr_setting,
+
+    svc_rr_configstringstream,
+    svc_rr_baselinestream,
+
     // r1q2 specific operations
-    svc_zpacket = 34 /* = 21 */,
-    svc_zdownload,
-    svc_gamestate, // q2pro specific, means svc_playerupdate in r1q2
-    svc_setting,
+    svc_q2pro_zpacket = 21,
+    svc_q2pro_zdownload,
+    svc_q2pro_gamestate, // q2pro specific, means svc_playerupdate in r1q2
+    svc_q2pro_setting,
 
     // q2pro specific operations
-    svc_configstringstream,
-    svc_baselinestream,
+    svc_q2pro_configstringstream,
+    svc_q2pro_baselinestream,
 
     svc_num_types
 } svc_ops_t;

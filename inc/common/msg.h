@@ -176,7 +176,7 @@ void    MSG_ShowDeltaUsercmdBits_Enhanced(int bits);
 #if USE_CLIENT || USE_MVD_CLIENT
 void    MSG_ShowDeltaEntityBits(uint64_t bits);
 void    MSG_ShowDeltaPlayerstateBits_Packet(int flags);
-const char *MSG_ServerCommandString(int cmd);
+const char *MSG_ServerCommandString(int cmd, int version);
 #endif // USE_CLIENT || USE_MVD_CLIENT
 #endif // USE_DEBUG
 

@@ -2502,11 +2502,11 @@ void MSG_ShowDeltaPlayerstateBits_Packet(int flags)
 #undef S
 }
 
-const char *MSG_ServerCommandString(int cmd)
+const char *MSG_ServerCommandString(int cmd, int version)
 {
     switch (cmd) {
     case -1: return "END OF MESSAGE";
-    default: return "UNKNOWN COMMAND";
+    default: break;
 #define S(x) case svc_##x: return "svc_" #x;
         S(bad)
         S(muzzleflash)
@@ -2529,14 +2529,31 @@ const char *MSG_ServerCommandString(int cmd)
         S(packetentities)
         S(deltapacketentities)
         S(frame)
-        S(zpacket)
-        S(zdownload)
-        S(gamestate)
-        S(setting)
-        S(configstringstream)
-        S(baselinestream)
-#undef S
     }
+    if (version == PROTOCOL_VERSION_RERELEASE) {
+        switch (cmd) {
+        default: break;
+            S(rr_zpacket)
+            S(rr_zdownload)
+            S(rr_gamestate)
+            S(rr_setting)
+            S(rr_configstringstream)
+            S(rr_baselinestream)
+        }
+    } else {
+        switch (cmd) {
+        default: break;
+            S(q2pro_zpacket)
+            S(q2pro_zdownload)
+            S(q2pro_gamestate)
+            S(q2pro_setting)
+            S(q2pro_configstringstream)
+            S(q2pro_baselinestream)
+        }
+    }
+#undef S
+
+    return "UNKNOWN COMMAND";
 }
 
 #endif // USE_CLIENT || USE_MVD_CLIENT
