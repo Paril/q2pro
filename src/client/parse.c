@@ -219,8 +219,6 @@ static void CL_ParseFrame(int extrabits)
             deltaframe = currentframe - delta;
         }
 
-        extraflags = MSG_ReadByte();
-
         bits = MSG_ReadByte();
 
         suppressed = bits & SUPPRESSCOUNT_MASK;
@@ -233,6 +231,11 @@ static void CL_ParseFrame(int extrabits)
         } else if (suppressed) {
             cl.frameflags |= FF_SUPPRESSED;
         }
+
+        if (cls.serverProtocol == PROTOCOL_VERSION_RERELEASE)
+            extraflags = MSG_ReadByte();
+        else
+            extraflags = (extrabits << 4) | (bits >> SUPPRESSCOUNT_BITS);
     } else {
         currentframe = MSG_ReadLong();
         deltaframe = MSG_ReadLong();
@@ -1344,13 +1347,15 @@ void CL_ParseServerMessage(void)
         }
 
         cmd = MSG_ReadByte();
-        if (cmd & 128 && (cls.serverProtocol < PROTOCOL_VERSION_R1Q2 || (cmd & ~128) != svc_frame))
-            goto badbyte;
-
-        if (cmd & 128)
-            extrabits = MSG_ReadByte();
-
-        cmd &= ~128;
+        if (cls.serverProtocol != PROTOCOL_VERSION_RERELEASE) {
+            if (cmd & ~SVCMD_MASK && (cls.serverProtocol < PROTOCOL_VERSION_R1Q2 || (cmd & SVCMD_MASK) != svc_frame))
+                goto badbyte;
+            extrabits = cmd >> SVCMD_BITS;
+            cmd &= SVCMD_MASK;
+        } else {
+            // extrabits are stored inside another byte in svc_frame
+            extrabits = 0;
+        }
 
         SHOWNET(1, "%3zu:%s\n", msg_read.readcount - 1, MSG_ServerCommandString(cmd));
 
@@ -1423,7 +1428,7 @@ void CL_ParseServerMessage(void)
             continue;
 
         case svc_frame:
-            CL_ParseFrame(0);
+            CL_ParseFrame(extrabits);
             continue;
 
         case svc_inventory:

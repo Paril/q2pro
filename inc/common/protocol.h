@@ -85,9 +85,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define CMD_MASK        (CMD_BACKUP - 1)
 
 
-// PARIL TEMP: just move these "extra bits" to a second byte
-//#define SVCMD_BITS              5
-//#define SVCMD_MASK              (BIT(SVCMD_BITS) - 1)
+#define SVCMD_BITS              5
+#define SVCMD_MASK              (BIT(SVCMD_BITS) - 1)
 
 #define FRAMENUM_BITS           27
 #define FRAMENUM_MASK           (BIT(FRAMENUM_BITS) - 1)

@@ -241,8 +241,8 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     MSG_WriteLong((client->framenum & FRAMENUM_MASK) | (delta << FRAMENUM_BITS));
 
     // secondary bytes to be patched
-    bflags = SZ_GetSpace(&msg_write, 1);
     b2 = SZ_GetSpace(&msg_write, 1);
+    bflags = SZ_GetSpace(&msg_write, 1);
 
     // send over the areabits
     MSG_WriteByte(frame->areabytes);
@@ -291,16 +291,8 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
         MSG_WriteShort(frame->clientNum);
     }
 
-    // save 3 high bits of extraflags
-    int extrabits = extraflags;
-
     *b1 = svc_frame;
-
-    *bflags = extrabits;
-
-    // save 4 low bits of extraflags
-    *b2 = (suppressed & SUPPRESSCOUNT_MASK) |
-          ((extraflags & 0x0F) << SUPPRESSCOUNT_BITS);
+    *bflags = extraflags;
 
     client->suppress_count = 0;
     client->frameflags = 0;
