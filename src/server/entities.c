@@ -28,7 +28,7 @@ Encode a client frame onto the network channel
 
 // some protocol optimizations are disabled when recording a demo
 #define Q2PRO_OPTIMIZE(c) \
-    ((c)->protocol == PROTOCOL_VERSION_Q2PRO && !(c)->settings[CLS_RECORDING])
+    (((c)->protocol == PROTOCOL_VERSION_Q2PRO || (c)->protocol == PROTOCOL_VERSION_RERELEASE) && !(c)->settings[CLS_RECORDING])
 
 /*
 =============
@@ -271,7 +271,7 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     }
 
     clientEntityNum = 0;
-    if (client->protocol == PROTOCOL_VERSION_Q2PRO) {
+    if (client->protocol == PROTOCOL_VERSION_Q2PRO || client->protocol == PROTOCOL_VERSION_RERELEASE) {
         if (frame->ps.pmove.pm_type < PM_DEAD && !client->settings[CLS_RECORDING]) {
             clientEntityNum = frame->clientNum + 1;
         }
@@ -289,7 +289,7 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     // delta encode the playerstate
     extraflags = MSG_WriteDeltaPlayerstate_Enhanced(oldstate, &frame->ps, psFlags);
 
-    if (client->protocol == PROTOCOL_VERSION_Q2PRO) {
+    if (client->protocol == PROTOCOL_VERSION_Q2PRO || client->protocol == PROTOCOL_VERSION_RERELEASE) {
         // delta encode the clientNum
         if ((oldframe ? oldframe->clientNum : 0) != frame->clientNum) {
             extraflags |= EPS_CLIENTNUM;
@@ -444,7 +444,7 @@ void SV_BuildClientFrame(client_t *client)
 
     // calculate the visible areas
     frame->areabytes = CM_WriteAreaBits(client->cm, frame->areabits, clientarea);
-    if (!frame->areabytes && client->protocol != PROTOCOL_VERSION_Q2PRO) {
+    if (!frame->areabytes && client->protocol != PROTOCOL_VERSION_Q2PRO && client->protocol != PROTOCOL_VERSION_RERELEASE) {
         frame->areabits[0] = 255;
         frame->areabytes = 1;
     }

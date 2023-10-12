@@ -604,7 +604,7 @@ static void SVC_GetChallenge(void)
 
     // send it back
     Netchan_OutOfBand(NS_SERVER, &net_from,
-                      "challenge %u p=34,35,36", challenge);
+                      "challenge %u p=%d", challenge, PROTOCOL_VERSION_RERELEASE);
 }
 
 /*
@@ -643,14 +643,11 @@ static bool parse_basic_params(conn_params_t *p)
     p->qport = atoi(Cmd_Argv(2)) ;
     p->challenge = atoi(Cmd_Argv(3));
 
-    // check for invalid protocol version
-    if (p->protocol < PROTOCOL_VERSION_OLD ||
-        p->protocol > PROTOCOL_VERSION_Q2PRO)
-        return reject("Unsupported protocol version %d.\n", p->protocol);
-
-    // check for valid, but outdated protocol version
-    if (p->protocol < PROTOCOL_VERSION_DEFAULT)
-        return reject("You need Quake 2 version 3.19 or higher.\n");
+    /* Reject any client that doesn't support the rerelease features -
+     * Old clients can't support certain things, particularly
+     * game-controlled pmove. */
+    if (p->protocol != PROTOCOL_VERSION_RERELEASE)
+        return reject("You need a 'rerelease' capable client to connect to this server.\n");
 
     return true;
 }
@@ -807,6 +804,15 @@ static bool parse_enhanced_params(conn_params_t *p)
         } else {
             p->version = PROTOCOL_VERSION_Q2PRO_MINIMUM;
         }
+    } else if (p->protocol == PROTOCOL_VERSION_RERELEASE) {
+        p->nctype = NETCHAN_NEW;
+
+        // set zlib
+        s = Cmd_Argv(6);
+        p->has_zlib = !*s || atoi(s);
+
+        // set minor protocol version
+        p->version = PROTOCOL_VERSION_Q2PRO_EXTENDED_LIMITS;
     }
 
     if (!CLIENT_COMPATIBLE(&svs.csr, p)) {
@@ -1011,6 +1017,20 @@ static void init_pmove_and_es_flags(client_t *newcl)
         if (newcl->version >= PROTOCOL_VERSION_Q2PRO_SHORT_ANGLES) {
             newcl->esFlags |= MSG_ES_SHORTANGLES;
         }
+        if (svs.csr.extended) {
+            newcl->esFlags |= MSG_ES_EXTENSIONS;
+        }
+        force = 1;
+    }
+    if (newcl->protocol == PROTOCOL_VERSION_RERELEASE) {
+        if (sv_qwmod->integer) {
+            PmoveEnableQW(&newcl->pmp);
+        }
+        newcl->pmp.flyhack = true;
+        newcl->pmp.flyfriction = 4;
+        newcl->esFlags |= MSG_ES_UMASK | MSG_ES_LONGSOLID;
+        newcl->esFlags |= MSG_ES_BEAMORIGIN;
+        newcl->esFlags |= MSG_ES_SHORTANGLES;
         if (svs.csr.extended) {
             newcl->esFlags |= MSG_ES_EXTENSIONS;
         }

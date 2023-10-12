@@ -418,6 +418,11 @@ void SV_New_f(void)
             MSG_WriteByte(sv_client->pmp.waterhack);
         }
         break;
+    case PROTOCOL_VERSION_RERELEASE:
+        MSG_WriteShort(sv_client->version);
+        MSG_WriteByte(sv.state);
+        MSG_WriteShort(q2pro_protocol_flags());
+        MSG_WriteByte(SV_FRAMERATE);
     }
 
     SV_ClientAddMessage(sv_client, MSG_RELIABLE | MSG_CLEAR);

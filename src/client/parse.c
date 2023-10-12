@@ -224,7 +224,7 @@ static void CL_ParseFrame(int extrabits)
         bits = MSG_ReadByte();
 
         suppressed = bits & SUPPRESSCOUNT_MASK;
-        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO) {
+        if (cls.serverProtocol == PROTOCOL_VERSION_Q2PRO || cls.serverProtocol == PROTOCOL_VERSION_RERELEASE) {
             if (suppressed & FF_CLIENTPRED) {
                 // CLIENTDROP is implied, don't draw both
                 suppressed &= ~FF_CLIENTDROP;
@@ -497,6 +497,27 @@ static void CL_ParseGamestate(int cmd)
     }
 }
 
+static void read_q2pro_protocol_flags(void)
+{
+    int i = MSG_ReadWord();
+    if (i & Q2PRO_PF_STRAFEJUMP_HACK) {
+        Com_DPrintf("Q2PRO strafejump hack enabled\n");
+        cl.pmp.strafehack = true;
+    }
+    if (i & Q2PRO_PF_QW_MODE) {
+        Com_DPrintf("Q2PRO QW mode enabled\n");
+        PmoveEnableQW(&cl.pmp);
+    }
+    if (i & Q2PRO_PF_WATERJUMP_HACK) {
+        Com_DPrintf("Q2PRO waterjump hack enabled\n");
+        cl.pmp.waterhack = true;
+    }
+    if (i & Q2PRO_PF_EXTENSIONS) {
+        Com_DPrintf("Q2PRO protocol extensions enabled\n");
+        cl.csr = cs_remap_q2pro_new;
+    }
+}
+
 static void CL_ParseServerData(void)
 {
     char    levelname[MAX_QPATH];
@@ -618,28 +639,7 @@ static void CL_ParseServerData(void)
             cinematic = i == ss_pic || i == ss_cinematic;
         }
         if (cls.protocolVersion >= PROTOCOL_VERSION_Q2PRO_EXTENDED_LIMITS) {
-            i = MSG_ReadWord();
-            if (i & Q2PRO_PF_STRAFEJUMP_HACK) {
-                Com_DPrintf("Q2PRO strafejump hack enabled\n");
-                cl.pmp.strafehack = true;
-            }
-            if (i & Q2PRO_PF_QW_MODE) {
-                Com_DPrintf("Q2PRO QW mode enabled\n");
-                PmoveEnableQW(&cl.pmp);
-            }
-            if (i & Q2PRO_PF_WATERJUMP_HACK) {
-                Com_DPrintf("Q2PRO waterjump hack enabled\n");
-                cl.pmp.waterhack = true;
-            }
-            if (i & Q2PRO_PF_EXTENSIONS) {
-                Com_DPrintf("Q2PRO protocol extensions enabled\n");
-                cl.csr = cs_remap_rerelease; // FIXME: Use cs_remap_q2pro_new
-
-                int32_t rate = MSG_ReadByte();
-                cl.sv_frametime = (1.0f / rate) * 1000;
-                cl.sv_frametime_inv = 1.0f / cl.sv_frametime;
-                cl.sv_framediv = rate / 10;
-            }
+            read_q2pro_protocol_flags();
         } else {
             if (MSG_ReadByte()) {
                 Com_DPrintf("Q2PRO strafejump hack enabled\n");
@@ -661,6 +661,21 @@ static void CL_ParseServerData(void)
         if (cls.protocolVersion >= PROTOCOL_VERSION_Q2PRO_SHORT_ANGLES) {
             cl.esFlags |= MSG_ES_SHORTANGLES;
         }
+        cl.pmp.speedmult = 2;
+        cl.pmp.flyhack = true; // fly hack is unconditionally enabled
+        cl.pmp.flyfriction = 4;
+    } else if (cls.serverProtocol == PROTOCOL_VERSION_RERELEASE) {
+        cls.protocolVersion = MSG_ReadWord();
+        cl.serverstate = MSG_ReadByte();
+        cinematic = cl.serverstate == ss_pic || cl.serverstate == ss_cinematic;
+        // FIXME: These shouldn't really matter, as pmove should be handled by the game/client library...
+        read_q2pro_protocol_flags();
+        cl.csr = cs_remap_rerelease;
+        int32_t rate = MSG_ReadByte();
+        cl.sv_frametime = (1.0f / rate) * 1000;
+        cl.sv_frametime_inv = 1.0f / cl.sv_frametime;
+        cl.sv_framediv = rate / 10;
+
         cl.pmp.speedmult = 2;
         cl.pmp.flyhack = true; // fly hack is unconditionally enabled
         cl.pmp.flyfriction = 4;
@@ -1436,7 +1451,7 @@ void CL_ParseServerMessage(void)
         case svc_gamestate:
         case svc_configstringstream:
         case svc_baselinestream:
-            if (cls.serverProtocol != PROTOCOL_VERSION_Q2PRO) {
+            if (cls.serverProtocol != PROTOCOL_VERSION_Q2PRO && cls.serverProtocol != PROTOCOL_VERSION_RERELEASE) {
                 goto badbyte;
             }
             CL_ParseGamestate(cmd);
