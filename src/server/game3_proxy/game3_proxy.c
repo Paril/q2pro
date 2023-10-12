@@ -257,30 +257,7 @@ static void wrap_local_sound(game3_edict_t *target, const vec3_t origin, game3_e
 // Map configstring IDs from "old" to "new"
 static int map_configstring_id(int index)
 {
-    if (index < CS_AIRACCEL_OLD)
-        return index; // no change
-    else if (index == CS_AIRACCEL_OLD)
-        return svs.csr.airaccel;
-    else if (index == CS_MAXCLIENTS_OLD)
-        return svs.csr.maxclients;
-    else if (index == CS_MAPCHECKSUM_OLD)
-        return svs.csr.mapchecksum;
-    else if (index >= CS_MODELS_OLD && index < CS_SOUNDS_OLD)
-        return (index - CS_MODELS_OLD) + svs.csr.models;
-    else if (index >= CS_SOUNDS_OLD && index < CS_IMAGES_OLD)
-        return (index - CS_SOUNDS_OLD) + svs.csr.sounds;
-    else if (index >= CS_IMAGES_OLD && index < CS_LIGHTS_OLD)
-        return (index - CS_IMAGES_OLD) + svs.csr.images;
-    else if (index >= CS_LIGHTS_OLD && index < CS_ITEMS_OLD)
-        return (index - CS_LIGHTS_OLD) + svs.csr.lights;
-    else if (index >= CS_ITEMS_OLD && index < CS_PLAYERSKINS_OLD)
-        return (index - CS_ITEMS_OLD) + svs.csr.items;
-    else if (index >= CS_PLAYERSKINS_OLD && index < CS_GENERAL_OLD)
-        return (index - CS_PLAYERSKINS_OLD) + svs.csr.playerskins;
-    else /* (index >= CS_GENERAL_OLD) */ {
-        // note: if this should exceed MAX_CONFIGSTRINGS, let the target function handle it
-        return (index - CS_GENERAL_OLD) + svs.csr.general;
-    }
+    return remap_cs_index(index, &cs_remap_old, &cs_remap_new);
 }
 
 static void wrap_configstring(int index, const char* str)
