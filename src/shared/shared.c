@@ -1469,8 +1469,6 @@ void Info_Print(const char *infostring)
 =====================================================================
 */
 
-#if USE_PROTOCOL_EXTENSIONS
-
 const cs_remap_t cs_remap_old = {
     .extended    = false,
 
@@ -1516,5 +1514,3 @@ const cs_remap_t cs_remap_new = {
 
     .end         = MAX_CONFIGSTRINGS
 };
-
-#endif
