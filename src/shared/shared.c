@@ -1476,6 +1476,8 @@ const cs_remap_t cs_remap_old = {
     .max_models  = MAX_MODELS_OLD,
     .max_sounds  = MAX_SOUNDS_OLD,
     .max_images  = MAX_IMAGES_OLD,
+    .max_shadowlights = 0,
+    .max_wheelitems = 0,
 
     .airaccel    = CS_AIRACCEL_OLD,
     .maxclients  = CS_MAXCLIENTS_OLD,
@@ -1485,9 +1487,15 @@ const cs_remap_t cs_remap_old = {
     .sounds      = CS_SOUNDS_OLD,
     .images      = CS_IMAGES_OLD,
     .lights      = CS_LIGHTS_OLD,
+    .shadowlights = -1,
     .items       = CS_ITEMS_OLD,
     .playerskins = CS_PLAYERSKINS_OLD,
     .general     = CS_GENERAL_OLD,
+    .wheelweapons = -1,
+    .wheelammo   = -1,
+    .wheelpowerups = -1,
+    .cdloopcount = -1,
+    .gamestyle   = -1,
 
     .end         = MAX_CONFIGSTRINGS_OLD
 };
@@ -1499,6 +1507,8 @@ const cs_remap_t cs_remap_new = {
     .max_models  = MAX_MODELS,
     .max_sounds  = MAX_SOUNDS,
     .max_images  = MAX_IMAGES,
+    .max_shadowlights = MAX_SHADOW_LIGHTS,
+    .max_wheelitems = MAX_WHEEL_ITEMS,
 
     .airaccel    = CS_AIRACCEL,
     .maxclients  = CS_MAXCLIENTS,
@@ -1508,9 +1518,15 @@ const cs_remap_t cs_remap_new = {
     .sounds      = CS_SOUNDS,
     .images      = CS_IMAGES,
     .lights      = CS_LIGHTS,
+    .shadowlights = CS_SHADOWLIGHTS,
     .items       = CS_ITEMS,
     .playerskins = CS_PLAYERSKINS,
     .general     = CS_GENERAL,
+    .wheelweapons = CS_WHEEL_WEAPONS,
+    .wheelammo   = CS_WHEEL_AMMO,
+    .wheelpowerups = CS_WHEEL_POWERUPS,
+    .cdloopcount = CS_CD_LOOP_COUNT,
+    .gamestyle   = CS_GAME_STYLE,
 
     .end         = MAX_CONFIGSTRINGS
 };

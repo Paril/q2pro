@@ -1285,6 +1285,8 @@ typedef struct {
     uint16_t    max_models;
     uint16_t    max_sounds;
     uint16_t    max_images;
+    uint16_t    max_shadowlights;
+    uint16_t    max_wheelitems;
 
     uint16_t    airaccel;
     uint16_t    maxclients;
@@ -1294,9 +1296,15 @@ typedef struct {
     uint16_t    sounds;
     uint16_t    images;
     uint16_t    lights;
+    uint16_t    shadowlights;
     uint16_t    items;
     uint16_t    playerskins;
     uint16_t    general;
+    uint16_t    wheelweapons;
+    uint16_t    wheelammo;
+    uint16_t    wheelpowerups;
+    uint16_t    cdloopcount;
+    uint16_t    gamestyle;
 
     uint16_t    end;
 } cs_remap_t;
