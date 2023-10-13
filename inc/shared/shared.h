@@ -256,7 +256,7 @@ typedef vec4_t quat_t;
 
 void Quat_ComputeW(quat_t q);
 void Quat_SLerp(const quat_t qa, const quat_t qb, float backlerp, float frontlerp, quat_t out);
-void Quat_Normalize(quat_t q);
+float Quat_Normalize(quat_t q);
 void Quat_MultiplyQuat (const quat_t qa, const quat_t qb, quat_t out);
 void Quat_MultiplyVector (const quat_t q, const vec3_t v, quat_t out);
 void Quat_RotatePoint (const quat_t q, const vec3_t in, vec3_t out);
@@ -483,7 +483,17 @@ bool COM_IsUint(const char *s);
 bool COM_IsPath(const char *s);
 bool COM_IsWhite(const char *s);
 
-char *COM_Parse(const char **data_p);
+// flags for COM_ParseEx
+
+// parse as UTF8
+// transform escape sequences into their
+// string counterparts (\\n becomes \n, \\ becomes \, etc)
+#define PARSE_FLAG_ESCAPE    BIT(0)
+
+char *COM_ParseEx(const char **data_p, int32_t flags, char *output, size_t output_length);
+
+#define COM_Parse(data_p) COM_ParseEx(data_p, 0, NULL, 0)
+
 // data is an in/out parm, returns a parsed out token
 size_t COM_Compress(char *data);
 
