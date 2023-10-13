@@ -618,6 +618,9 @@ static void CL_ParseServerData(void)
     cl.frametime_inv = BASE_1_FRAMETIME;
     cl.framediv = 1;
 #endif
+    cl.sv_frametime = 100;
+    cl.sv_frametime_inv = 1.0f / cl.sv_frametime;
+    cl.sv_framediv = 1;
 
     // setup default server state
     cl.serverstate = ss_game;
