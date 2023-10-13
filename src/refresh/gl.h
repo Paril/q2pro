@@ -199,6 +199,10 @@ extern cvar_t *gl_modulate_entities;
 extern cvar_t *gl_doublelight_entities;
 extern cvar_t *gl_fontshadow;
 extern cvar_t *gl_shaders;
+#if USE_MD5
+extern cvar_t *gl_load_md5models;
+extern cvar_t *gl_use_md5models;
+#endif
 
 // development variables
 extern cvar_t *gl_znear;
@@ -216,6 +220,7 @@ extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_lightmap;
 extern cvar_t *gl_fullbright;
 extern cvar_t *gl_vertexlight;
+extern cvar_t *gl_lightgrid;
 extern cvar_t *gl_showerrors;
 
 typedef enum {
@@ -261,15 +266,20 @@ typedef struct {
     vec_t   radius;
 } maliasframe_t;
 
+typedef char maliasskinname_t[MAX_QPATH];
+
 typedef struct {
-    int             numverts;
-    int             numtris;
-    int             numindices;
-    int             numskins;
-    QGL_INDEX_TYPE  *indices;
-    maliasvert_t    *verts;
-    maliastc_t      *tcoords;
-    image_t         **skins;
+    int              numverts;
+    int              numtris;
+    int              numindices;
+    int              numskins;
+    QGL_INDEX_TYPE   *indices;
+    maliasvert_t     *verts;
+    maliastc_t       *tcoords;
+#if USE_MD5          
+    maliasskinname_t *skinnames;
+#endif               
+    image_t          **skins;
 } maliasmesh_t;
 
 typedef struct {
@@ -279,6 +289,77 @@ typedef struct {
     int             origin_y;
     image_t         *image;
 } mspriteframe_t;
+
+#if USE_MD5
+
+// the total amount of joints the renderer will bother handling
+#define MAX_MD5_JOINTS  256
+
+/* Joint */
+typedef struct
+{
+	int parent;
+
+	vec3_t pos;
+	quat_t orient;
+    float  scale;
+} md5_joint_t;
+
+/* Vertex */
+typedef struct
+{
+	vec2_t st;
+    vec3_t normal;
+
+	int start; /* start weight */
+	int count; /* weight count */
+} md5_vertex_t;
+
+/* Triangle */
+typedef struct
+{
+	int index[3];
+} md5_triangle_t;
+
+/* Weight */
+typedef struct
+{
+	int joint;
+	float bias;
+
+	vec3_t pos;
+} md5_weight_t;
+
+/* Bounding box */
+typedef struct
+{
+	vec3_t min;
+	vec3_t max;
+} md5_bbox_t;
+
+/* MD5 model + animation structure */
+typedef struct
+{
+    // mesh data
+	md5_vertex_t *vertices;
+	md5_weight_t *weights;
+    QGL_INDEX_TYPE *indices;
+
+	int num_verts;
+	int num_indices;
+	int num_weights;
+
+    // animation data
+	int num_joints;
+	md5_joint_t *base_skeleton;
+	int num_frames; // may not match model_t::numframes, but not fatal
+	md5_joint_t *skeleton_frames; // [num_joints][num_frames]
+
+    int num_skins;
+    image_t **skins;
+} md5_model_t;
+
+#endif
 
 typedef struct {
     enum {
@@ -295,7 +376,11 @@ typedef struct {
     int nummeshes;
     int numframes;
 
-    maliasmesh_t *meshes;
+    maliasmesh_t *meshes; // md2 / md3
+#if USE_MD5
+    md5_model_t *skeleton;      // md5
+    memhunk_t    skeleton_hunk; // md5
+#endif
     union {
         maliasframe_t *frames;
         mspriteframe_t *spriteframes;
@@ -318,8 +403,8 @@ qhandle_t R_RegisterModel(const char *name);
  * gl_surf.c
  *
  */
-#define LIGHT_STYLE(surf, i) \
-    &glr.fd.lightstyles[gl_static.lightstylemap[(surf)->styles[i]]]
+#define LIGHT_STYLE(i) \
+    &glr.fd.lightstyles[gl_static.lightstylemap[(i)]]
 
 #define LM_MAX_LIGHTMAPS    32
 #define LM_BLOCK_WIDTH      512

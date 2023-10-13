@@ -50,6 +50,8 @@ cvar_t *gl_modulate_entities;
 cvar_t *gl_doublelight_entities;
 cvar_t *gl_fontshadow;
 cvar_t *gl_shaders;
+cvar_t *gl_load_md5models;
+cvar_t *gl_use_md5models;
 cvar_t *gl_waterwarp;
 cvar_t *gl_swapinterval;
 
@@ -77,6 +79,7 @@ cvar_t *gl_lockpvs;
 cvar_t *gl_lightmap;
 cvar_t *gl_fullbright;
 cvar_t *gl_vertexlight;
+cvar_t *gl_lightgrid;
 cvar_t *gl_polyblend;
 cvar_t *gl_showerrors;
 
@@ -898,6 +901,10 @@ static void GL_Register(void)
     gl_doublelight_entities = Cvar_Get("gl_doublelight_entities", "1", 0);
     gl_fontshadow = Cvar_Get("gl_fontshadow", "0", 0);
     gl_shaders = Cvar_Get("gl_shaders", (gl_config.caps & QGL_CAP_SHADER) ? "1" : "0", CVAR_REFRESH);
+#if USE_MD5
+    gl_load_md5models = Cvar_Get("gl_load_md5models", "1", CVAR_REFRESH);
+    gl_use_md5models = Cvar_Get("gl_use_md5models", "1", 0);
+#endif
     gl_waterwarp = Cvar_Get("gl_waterwarp", "0", 0);
     gl_swapinterval = Cvar_Get("gl_swapinterval", "1", CVAR_ARCHIVE);
     gl_swapinterval->changed = gl_swapinterval_changed;
@@ -930,6 +937,7 @@ static void GL_Register(void)
     gl_fullbright->changed = gl_lightmap_changed;
     gl_vertexlight = Cvar_Get("gl_vertexlight", "0", 0);
     gl_vertexlight->changed = gl_lightmap_changed;
+    gl_lightgrid = Cvar_Get("gl_lightgrid", "1", 0);
     gl_polyblend = Cvar_Get("gl_polyblend", "1", 0);
     gl_showerrors = Cvar_Get("gl_showerrors", "1", 0);
 

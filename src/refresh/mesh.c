@@ -29,7 +29,6 @@ static vec3_t   oldscale;
 static vec3_t   newscale;
 static vec3_t   translate;
 static vec_t    shellscale;
-static tessfunc_t tessfunc;
 static vec4_t   color;
 
 static const vec_t  *shadelight;
@@ -38,6 +37,12 @@ static vec3_t       shadedir;
 static float    celscale;
 
 static GLfloat  shadowmatrix[16];
+
+#if USE_MD5
+typedef void (*skeltessfunc_t)(const md5_model_t *);
+
+static md5_joint_t  temp_skeleton[MAX_MD5_JOINTS];
+#endif
 
 static void setup_dotshading(void)
 {
@@ -420,7 +425,7 @@ static void setup_celshading(void)
     celscale = 1.0f - Distance(origin, glr.fd.vieworg) / 700.0f;
 }
 
-static void draw_celshading(const maliasmesh_t *mesh)
+static inline void draw_celshading(QGL_INDEX_TYPE *indices, uint32_t num_indices)
 {
     if (celscale < 0.01f || celscale > 1)
         return;
@@ -433,8 +438,8 @@ static void draw_celshading(const maliasmesh_t *mesh)
     qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     qglCullFace(GL_FRONT);
     GL_Color(0, 0, 0, color[3] * celscale);
-    qglDrawElements(GL_TRIANGLES, mesh->numindices, QGL_INDEX_ENUM,
-                    mesh->indices);
+    qglDrawElements(GL_TRIANGLES, num_indices, QGL_INDEX_ENUM,
+                    indices);
     qglCullFace(GL_BACK);
     qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     qglLineWidth(1);
@@ -494,7 +499,7 @@ static void setup_shadow(void)
     GL_MultMatrix(shadowmatrix, tmp, matrix);
 }
 
-static void draw_shadow(const maliasmesh_t *mesh)
+static inline void draw_shadow(QGL_INDEX_TYPE *indices, uint32_t num_indices)
 {
     if (shadowmatrix[15] < 0.5f)
         return;
@@ -516,8 +521,8 @@ static void draw_shadow(const maliasmesh_t *mesh)
     qglEnable(GL_POLYGON_OFFSET_FILL);
     qglPolygonOffset(-1.0f, -2.0f);
     GL_Color(0, 0, 0, color[3] * 0.5f);
-    qglDrawElements(GL_TRIANGLES, mesh->numindices, QGL_INDEX_ENUM,
-                    mesh->indices);
+    qglDrawElements(GL_TRIANGLES, num_indices, QGL_INDEX_ENUM,
+                    indices);
     qglDisable(GL_POLYGON_OFFSET_FILL);
 
     // once we have drawn something to stencil buffer, continue to clear it for
@@ -529,7 +534,7 @@ static void draw_shadow(const maliasmesh_t *mesh)
     }
 }
 
-static int texnum_for_mesh(const maliasmesh_t *mesh)
+static inline int texnum_for_model(int32_t num_skins, image_t **skins)
 {
     const entity_t *ent = glr.ent;
 
@@ -539,21 +544,21 @@ static int texnum_for_mesh(const maliasmesh_t *mesh)
     if (ent->skin)
         return IMG_ForHandle(ent->skin)->texnum;
 
-    if (!mesh->numskins)
+    if (!num_skins)
         return TEXNUM_DEFAULT;
 
-    if (ent->skinnum < 0 || ent->skinnum >= mesh->numskins) {
+    if (ent->skinnum < 0 || ent->skinnum >= num_skins) {
         Com_DPrintf("%s: no such skin: %d\n", "GL_DrawAliasModel", ent->skinnum);
-        return mesh->skins[0]->texnum;
+        return skins[0]->texnum;
     }
 
-    if (mesh->skins[ent->skinnum]->texnum == TEXNUM_DEFAULT)
-        return mesh->skins[0]->texnum;
+    if (skins[ent->skinnum]->texnum == TEXNUM_DEFAULT)
+        return skins[0]->texnum;
 
-    return mesh->skins[ent->skinnum]->texnum;
+    return skins[ent->skinnum]->texnum;
 }
 
-static void draw_alias_mesh(const maliasmesh_t *mesh)
+static void draw_alias_mesh(const maliasmesh_t *mesh, tessfunc_t tessfunc)
 {
     glStateBits_t state = GLS_INTENSITY_ENABLE;
 
@@ -571,7 +576,7 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
 
     GL_StateBits(state);
 
-    GL_BindTexture(0, texnum_for_mesh(mesh));
+    GL_BindTexture(0, texnum_for_model(mesh->numskins, mesh->skins));
 
     (*tessfunc)(mesh);
     c.trisDrawn += mesh->numtris;
@@ -593,17 +598,226 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
     qglDrawElements(GL_TRIANGLES, mesh->numindices, QGL_INDEX_ENUM,
                     mesh->indices);
 
-    draw_celshading(mesh);
+    draw_celshading(mesh->indices, mesh->numindices);
 
     if (gl_showtris->integer) {
         GL_DrawOutlines(mesh->numindices, mesh->indices);
     }
 
     // FIXME: unlock arrays before changing matrix?
-    draw_shadow(mesh);
+    draw_shadow(mesh->indices, mesh->numindices);
 
     GL_UnlockArrays();
 }
+
+#if USE_MD5
+// for the given vertex, set of weights & skeleton, calculate
+// the output vertex (and optionally normal).
+static inline void calculate_vertex_for_skeleton(const md5_vertex_t *vert, const md5_weight_t *weights, const md5_joint_t *skeleton, vec3_t out_position, vec3_t out_normal)
+{        
+    VectorClear(out_position);
+
+    if (out_normal) {
+        VectorClear(out_normal);
+    }
+
+	for (int32_t j = 0; j < vert->count; ++j) {
+		const md5_weight_t *weight = &weights[vert->start + j];
+		const md5_joint_t *joint = &skeleton[weight->joint];
+
+        vec3_t local_pos;
+        VectorScale(weight->pos, joint->scale, local_pos);
+
+		vec3_t wv;
+		Quat_RotatePoint(joint->orient, local_pos, wv);
+
+        VectorAdd(joint->pos, wv, wv);
+        VectorMA(out_position, weight->bias, wv, out_position);
+            
+        if (out_normal) {
+            quat_t orient_inv;
+            Quat_Invert(joint->orient, orient_inv);
+            Quat_RotatePoint(orient_inv, vert->normal, wv);
+            VectorScale(wv, weight->bias, wv);
+            VectorAdd(out_normal, wv, out_normal);
+        }
+	}
+}
+
+// skel preparation functions - shared with the specific tess funcs
+
+static void tess_plain_skel_prepare (const md5_model_t *mesh, const md5_joint_t *skeleton)
+{
+	for (int32_t i = 0; i < mesh->num_verts; ++i) {
+        vec3_t position;
+        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, NULL);
+
+		tess.vertices[(i * 4) + 0] = position[0];
+		tess.vertices[(i * 4) + 1] = position[1];
+		tess.vertices[(i * 4) + 2] = position[2];
+	}
+}
+
+static void tess_shade_skel_prepare(const md5_model_t *mesh, const md5_joint_t *skeleton)
+{
+	for (int32_t i = 0; i < mesh->num_verts; ++i) {
+        vec3_t position, normal;
+        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, normal);
+
+		tess.vertices[(i * VERTEX_SIZE) + 0] = position[0];
+		tess.vertices[(i * VERTEX_SIZE) + 1] = position[1];
+		tess.vertices[(i * VERTEX_SIZE) + 2] = position[2];
+
+        vec_t d = shadedot(normal);
+        tess.vertices[(i * VERTEX_SIZE) + 4] = shadelight[0] * d;
+        tess.vertices[(i * VERTEX_SIZE) + 5] = shadelight[1] * d;
+        tess.vertices[(i * VERTEX_SIZE) + 6] = shadelight[2] * d;
+        tess.vertices[(i * VERTEX_SIZE) + 7] = shadelight[3];
+	}
+}
+
+static void tess_shell_skel_prepare(const md5_model_t *mesh, const md5_joint_t *skeleton)
+{
+	for (int32_t i = 0; i < mesh->num_verts; ++i) {
+        vec3_t position, normal;
+        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, normal);
+
+        VectorMA(position, shellscale, normal, &tess.vertices[(i * 4) + 0]);
+	}
+}
+
+// static skel functions
+
+static void tess_static_plain_skel(const md5_model_t *mesh)
+{
+    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
+
+    tess_plain_skel_prepare(mesh, skeleton);
+}
+
+static void tess_static_shade_skel(const md5_model_t *mesh)
+{
+    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
+
+    tess_shade_skel_prepare(mesh, skeleton);
+}
+
+static void tess_static_shell_skel(const md5_model_t *mesh)
+{
+    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
+
+    tess_shell_skel_prepare(mesh, skeleton);
+}
+
+// interpolate skel_a and skel_b into the output skeleton
+static inline void tess_skel_interpolate_skeleton (const md5_joint_t *skel_a, const md5_joint_t *skel_b,
+	int num_joints, md5_joint_t *out)
+{
+	for (int32_t i = 0; i < num_joints; ++i) {
+		out[i].parent = skel_a[i].parent;
+        out[i].scale = skel_a[i].scale;
+
+        LerpVector2(skel_a[i].pos, skel_b[i].pos, backlerp, frontlerp, out[i].pos);
+		Quat_SLerp(skel_a[i].orient, skel_b[i].orient, backlerp, frontlerp, out[i].orient);
+	}
+}
+
+static void tess_lerped_plain_skel(const md5_model_t *mesh)
+{
+    int32_t frames[] = {
+        oldframenum % mesh->num_frames,
+        newframenum % mesh->num_frames
+    };
+
+	tess_skel_interpolate_skeleton(&mesh->skeleton_frames[frames[0] * mesh->num_joints],
+		&mesh->skeleton_frames[frames[1] * mesh->num_joints],
+		mesh->num_joints, temp_skeleton);
+
+    tess_plain_skel_prepare(mesh, temp_skeleton);
+}
+
+static void tess_lerped_shade_skel(const md5_model_t *mesh)
+{
+    int32_t frames[] = {
+        oldframenum % mesh->num_frames,
+        newframenum % mesh->num_frames
+    };
+
+	tess_skel_interpolate_skeleton(&mesh->skeleton_frames[frames[0] * mesh->num_joints],
+		&mesh->skeleton_frames[frames[1] * mesh->num_joints],
+		mesh->num_joints, temp_skeleton);
+
+    tess_shade_skel_prepare(mesh, temp_skeleton);
+}
+
+static void tess_lerped_shell_skel(const md5_model_t *mesh)
+{
+    int32_t frames[] = {
+        oldframenum % mesh->num_frames,
+        newframenum % mesh->num_frames
+    };
+
+    /* Interpolate skeletons between two frames */
+	tess_skel_interpolate_skeleton(&mesh->skeleton_frames[frames[0] * mesh->num_joints],
+		&mesh->skeleton_frames[frames[1] * mesh->num_joints],
+		mesh->num_joints, temp_skeleton);
+
+    tess_shell_skel_prepare(mesh, temp_skeleton);
+}
+
+static void draw_alias_skeleton(const md5_model_t *model, skeltessfunc_t tessfunc)
+{
+    glStateBits_t state = GLS_INTENSITY_ENABLE;
+
+    // fall back to entity matrix
+    GL_LoadMatrix(glr.entmatrix);
+
+    if (shadelight)
+        state |= GLS_SHADE_SMOOTH;
+
+    if (glr.ent->flags & RF_TRANSLUCENT)
+        state |= GLS_BLEND_BLEND;
+
+    if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT)
+        state |= GLS_DEPTHMASK_FALSE;
+
+    GL_StateBits(state);
+
+    GL_BindTexture(0, texnum_for_model(model->num_skins, model->skins));
+
+    (*tessfunc)(model);
+
+    c.trisDrawn += model->num_indices / 3;
+
+    if (shadelight) {
+        GL_ArrayBits(GLA_VERTEX | GLA_TC | GLA_COLOR);
+        GL_VertexPointer(3, VERTEX_SIZE, tess.vertices);
+        GL_ColorFloatPointer(4, VERTEX_SIZE, tess.vertices + 4);
+    } else {
+        GL_ArrayBits(GLA_VERTEX | GLA_TC);
+        GL_VertexPointer(3, 4, tess.vertices);
+        GL_Color(color[0], color[1], color[2], color[3]);
+    }
+
+    GL_TexCoordPointer(2, sizeof(md5_vertex_t) / sizeof(float), model->vertices->st);
+
+    GL_LockArrays(model->num_verts);
+
+    qglDrawElements(GL_TRIANGLES, model->num_indices, QGL_INDEX_ENUM,
+                    model->indices);
+
+    draw_celshading(model->indices, model->num_indices);
+
+    if (gl_showtris->integer) {
+        GL_DrawOutlines(model->num_indices, model->indices);
+    }
+
+    // FIXME: unlock arrays before changing matrix?
+    draw_shadow(model->indices, model->num_indices);
+
+    GL_UnlockArrays();
+}
+#endif
 
 // extra ugly. this needs to be done on the client, but to avoid complexity of
 // rendering gun model in its own refdef, and to preserve compatibility with
@@ -679,17 +893,34 @@ void GL_DrawAliasModel(const model_t *model)
     setup_shadow();
 
     // select proper tessfunc
+    tessfunc_t tessfunc;
+#if USE_MD5
+    skeltessfunc_t skeltessfunc;
+#endif
+
     if (ent->flags & RF_SHELL_MASK) {
         shellscale = (ent->flags & RF_WEAPONMODEL) ?
             WEAPONSHELL_SCALE : POWERSUIT_SCALE;
         tessfunc = newframenum == oldframenum ?
             tess_static_shell : tess_lerped_shell;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_shell_skel : tess_lerped_shell_skel;
+#endif
     } else if (shadelight) {
         tessfunc = newframenum == oldframenum ?
             tess_static_shade : tess_lerped_shade;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_shade_skel : tess_lerped_shade_skel;
+#endif
     } else {
         tessfunc = newframenum == oldframenum ?
             tess_static_plain : tess_lerped_plain;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_plain_skel : tess_lerped_plain_skel;
+#endif
     }
 
     GL_RotateForEntity();
@@ -701,8 +932,16 @@ void GL_DrawAliasModel(const model_t *model)
         GL_DepthRange(0, 0.25f);
 
     // draw all the meshes
-    for (i = 0; i < model->nummeshes; i++)
-        draw_alias_mesh(&model->meshes[i]);
+#if USE_MD5
+    if (gl_use_md5models->integer && model->skeleton) {
+        draw_alias_skeleton(model->skeleton, skeltessfunc);
+    } else {
+#endif
+        for (i = 0; i < model->nummeshes; i++)
+            draw_alias_mesh(&model->meshes[i], tessfunc);
+#if USE_MD5
+    }
+#endif
 
     if (ent->flags & RF_DEPTHHACK)
         GL_DepthRange(0, 1);
