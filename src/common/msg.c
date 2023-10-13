@@ -1007,12 +1007,12 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
 
     // send stats
     statbits = 0;
-    for (i = 0; i < MAX_STATS; i++)
+    for (i = 0; i < MAX_STATS_OLD; i++)
         if (to->stats[i] != from->stats[i])
             statbits |= BIT(i);
 
     MSG_WriteLong(statbits);
-    for (i = 0; i < MAX_STATS; i++)
+    for (i = 0; i < MAX_STATS_OLD; i++)
         if (statbits & BIT(i))
             MSG_WriteShort(to->stats[i]);
 }
@@ -1134,11 +1134,17 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
         VectorCopy(from->gunangles, to->gunangles);
     }
 
-    statbits = 0;
-    for (i = 0; i < MAX_STATS; i++)
-        if (to->stats[i] != from->stats[i])
-            statbits |= BIT_ULL(i);
-
+    if(flags & MSG_PS_NEW_STATS) {
+        statbits = 0;
+        for (i = 0; i < MAX_STATS; i++)
+            if (to->stats[i] != from->stats[i])
+                statbits |= BIT_ULL(i);
+    } else {
+        statbits = 0;
+        for (i = 0; i < MAX_STATS_OLD; i++)
+            if (to->stats[i] != from->stats[i])
+                statbits |= BIT(i);
+    }
     if (statbits)
         eflags |= EPS_STATS;
 
@@ -1254,10 +1260,17 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
 
     // send stats
     if (eflags & EPS_STATS) {
-        MSG_WriteLong64(statbits);
-        for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT_ULL(i))
-                MSG_WriteShort(to->stats[i]);
+        if(flags & MSG_PS_NEW_STATS) {
+            MSG_WriteLong64(statbits);
+            for (i = 0; i < MAX_STATS; i++)
+                if (statbits & BIT_ULL(i))
+                    MSG_WriteShort(to->stats[i]);
+        } else{
+            MSG_WriteLong(statbits);
+            for (i = 0; i < MAX_STATS_OLD; i++)
+                if (statbits & BIT(i))
+                    MSG_WriteShort(to->stats[i]);
+        }
     }
 
 // KEX
@@ -1352,8 +1365,9 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
             pflags |= PPS_GUNANGLES;
     }
 
+    // TODO: properly handle new MAX_STATS value
     statbits = 0;
-    for (i = 0; i < MAX_STATS; i++)
+    for (i = 0; i < MAX_STATS_OLD; i++)
         if (to->stats[i] != from->stats[i])
             statbits |= BIT(i);
 
@@ -1447,7 +1461,7 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
     // send stats
     if (pflags & PPS_STATS) {
         MSG_WriteLong(statbits);
-        for (i = 0; i < MAX_STATS; i++)
+        for (i = 0; i < MAX_STATS_OLD; i++)
             if (statbits & BIT(i))
                 MSG_WriteShort(to->stats[i]);
     }
@@ -2087,7 +2101,7 @@ void MSG_ParseDeltaPlayerstate_Default(const player_state_t *from,
     // parse stats
     statbits = MSG_ReadLong();
     if (statbits) {
-        for (i = 0; i < MAX_STATS; i++)
+        for (i = 0; i < MAX_STATS_OLD; i++)
             if (statbits & BIT(i))
                 to->stats[i] = MSG_ReadShort();
     }
@@ -2214,10 +2228,17 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
 
     // parse stats
     if (extraflags & EPS_STATS) {
-        statbits = MSG_ReadLong64();
-        for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT_ULL(i))
-                to->stats[i] = MSG_ReadShort();
+        if (psflags & MSG_PS_NEW_STATS) {
+            statbits = MSG_ReadLong64();
+            for (i = 0; i < MAX_STATS; i++)
+                if (statbits & BIT_ULL(i))
+                    to->stats[i] = MSG_ReadShort();
+        } else {
+            statbits = MSG_ReadLong();
+            for (i = 0; i < MAX_STATS_OLD; i++)
+                if (statbits & BIT(i))
+                    to->stats[i] = MSG_ReadShort();
+        }
     }
 
 // KEX
@@ -2327,9 +2348,10 @@ void MSG_ParseDeltaPlayerstate_Packet(const player_state_t  *from,
 
     // parse stats
     if (flags & PPS_STATS) {
-        statbits = MSG_ReadLong64();
-        for (i = 0; i < MAX_STATS; i++)
-            if (statbits & BIT_ULL(i))
+        // TODO: properly handle new stats number (64)
+        statbits = MSG_ReadLong();
+        for (i = 0; i < MAX_STATS_OLD; i++)
+            if (statbits & BIT(i))
                 to->stats[i] = MSG_ReadShort();
     }
 }

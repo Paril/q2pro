@@ -700,7 +700,7 @@ static void CL_ParseServerData(void)
         // FIXME: These shouldn't really matter, as pmove should be handled by the game/client library...
         read_q2pro_protocol_flags();
         cl.csr = cs_remap_rerelease;
-        cl.psFlags |= MSG_PS_FLOAT_COORDS;
+        cl.psFlags |= MSG_PS_FLOAT_COORDS | MSG_PS_NEW_STATS;
         cl.esFlags |= MSG_ES_FLOAT_COORDS;
         int32_t rate = MSG_ReadByte();
         cl.sv_frametime = (1.0f / rate) * 1000;

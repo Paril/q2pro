@@ -1163,6 +1163,7 @@ enum {
     STAT_CHASE,
     STAT_SPECTATOR,
 
+    MAX_STATS_OLD = 32,
     MAX_STATS = 64 // KEX
 };
 

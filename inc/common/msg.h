@@ -79,8 +79,9 @@ typedef enum {
     MSG_PS_IGNORE_PREDICTION    = BIT(5),   // mutually exclusive with IGNORE_VIEWANGLES
     MSG_PS_EXTENSIONS           = BIT(6),   // enable protocol extensions
     MSG_PS_FLOAT_COORDS         = BIT(7),   // floating point coordinates
-    MSG_PS_FORCE                = BIT(8),   // send even if unchanged (MVD stream only)
-    MSG_PS_REMOVE               = BIT(9),   // player is removed (MVD stream only)
+    MSG_PS_NEW_STATS            = BIT(8),   // increased stats numbers
+    MSG_PS_FORCE                = BIT(9),   // send even if unchanged (MVD stream only)
+    MSG_PS_REMOVE               = BIT(10),  // player is removed (MVD stream only)
 } msgPsFlags_t;
 
 typedef enum {
