@@ -29,7 +29,6 @@ static vec3_t   oldscale;
 static vec3_t   newscale;
 static vec3_t   translate;
 static vec_t    shellscale;
-static tessfunc_t tessfunc;
 static vec4_t   color;
 
 static const vec_t  *shadelight;
@@ -858,17 +857,34 @@ void GL_DrawAliasModel(const model_t *model)
     setup_shadow();
 
     // select proper tessfunc
+    tessfunc_t tessfunc;
+#if USE_MD5
+    skeltessfunc_t skeltessfunc;
+#endif
+
     if (ent->flags & RF_SHELL_MASK) {
         shellscale = (ent->flags & RF_WEAPONMODEL) ?
             WEAPONSHELL_SCALE : POWERSUIT_SCALE;
         tessfunc = newframenum == oldframenum ?
             tess_static_shell : tess_lerped_shell;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_shell_skel : tess_lerped_shell_skel;
+#endif
     } else if (shadelight) {
         tessfunc = newframenum == oldframenum ?
             tess_static_shade : tess_lerped_shade;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_shade_skel : tess_lerped_shade_skel;
+#endif
     } else {
         tessfunc = newframenum == oldframenum ?
             tess_static_plain : tess_lerped_plain;
+#if USE_MD5
+        skeltessfunc = newframenum == oldframenum ?
+            tess_static_plain_skel : tess_lerped_plain_skel;
+#endif
     }
 
     GL_RotateForEntity();
