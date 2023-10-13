@@ -1195,7 +1195,7 @@ static void SV_NewClientExecuteMove(int c)
         lastframe = MSG_ReadLong();
     }
 
-    numDups = MSG_ReadByte(); // PARIL TEMP
+    numDups = MSG_ReadByte();
 
     if (numDups >= MAX_PACKET_FRAMES) {
         SV_DropClient(sv_client, "too many frames in packet");
