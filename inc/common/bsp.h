@@ -31,9 +31,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define VIS_FAST_LONGS(bsp) \
     (((bsp)->visrowsize + sizeof(size_t) - 1) / sizeof(size_t))
 
+// footstep IDs that are fixed (fallback step sounds
+// and EV_LADDER step sounds)
+#define FOOTSTEP_RESERVED_COUNT     2
+#define FOOTSTEP_ID_DEFAULT         0
+#define FOOTSTEP_ID_LADDER          1
+
 typedef struct mtexinfo_s {  // used internally due to name len probs //ZOID
     csurface_t          c;
     char                name[MAX_TEXNAME];
+
+    // footstep ID; will be identical for matching c.materials.
+    int                 step_id;
 
 #if USE_REF
     vec3_t              axis[2];

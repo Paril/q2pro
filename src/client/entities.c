@@ -22,8 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 extern qhandle_t cl_mod_powerscreen;
 extern qhandle_t cl_mod_laser;
 extern qhandle_t cl_mod_dmspot;
-extern qhandle_t cl_sfx_footsteps[4];
-extern qhandle_t cl_sfx_laddersteps[5];
 
 /*
 =========================================================================
@@ -234,15 +232,15 @@ static void parse_entity_event(int number)
         break;
     case EV_FOOTSTEP:
         if (cl_footsteps->integer)
-            S_StartSound(NULL, number, CHAN_BODY, cl_sfx_footsteps[Q_rand() & 3], 1, ATTN_NORM, 0);
-        break;
+            CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, number, 1.0f, ATTN_NORM);
+       break;
     case EV_OTHER_FOOTSTEP:
         if (cl.csr.extended && cl_footsteps->integer)
-            S_StartSound(NULL, number, CHAN_BODY, cl_sfx_footsteps[Q_rand() & 3], 0.5f, ATTN_IDLE, 0);
+            CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, number, 0.5f, ATTN_IDLE);
         break;
     case EV_LADDER_STEP:
         if (cl.csr.extended && cl_footsteps->integer)
-            S_StartSound(NULL, number, CHAN_BODY, cl_sfx_laddersteps[Q_rand() % 5], 1, ATTN_NORM, 0);
+            CL_PlayFootstepSfx(FOOTSTEP_ID_LADDER, number, 1.0f, ATTN_NORM);
         break;
     case EV_FALLSHORT:
         S_StartSound(NULL, number, CHAN_AUTO, S_RegisterSound("player/land1.wav"), 1, ATTN_NORM, 0);
