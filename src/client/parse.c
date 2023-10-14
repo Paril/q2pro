@@ -1275,7 +1275,7 @@ static void CL_SkipDamage(void)
 
     for (uint8_t i = 0; i < count; i++)
     {
-        uint8_t encoded = MSG_ReadByte();
+        /*uint8_t encoded = */MSG_ReadByte();
         vec3_t dir;
         MSG_ReadDir(dir);
     }
@@ -1448,8 +1448,6 @@ static svc_handle_result_t handle_svc_common(int cmd, int extrabits)
 
 static svc_handle_result_t handle_svc_q2pro(int cmd)
 {
-    int index;
-
     switch (cmd) {
     case svc_q2pro_zpacket:
         CL_ParseZPacket();
@@ -1516,9 +1514,8 @@ static svc_handle_result_t handle_svc_rerelease(int cmd)
 
 void CL_ParseServerMessage(void)
 {
-    int         cmd, last_cmd = -1, index, extrabits;
+    int         cmd, last_cmd = -1, extrabits;
     size_t      readcount;
-    uint64_t    bits;
 
 #if USE_DEBUG
     if (cl_shownet->integer == 1) {
