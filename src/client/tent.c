@@ -31,8 +31,6 @@ qhandle_t   cl_sfx_railg;
 qhandle_t   cl_sfx_rockexp;
 qhandle_t   cl_sfx_grenexp;
 qhandle_t   cl_sfx_watrexp;
-qhandle_t   cl_sfx_footsteps[4];
-qhandle_t   cl_sfx_laddersteps[5];
 
 qhandle_t   cl_sfx_lightning;
 qhandle_t   cl_sfx_disrexp;
@@ -52,6 +50,115 @@ qhandle_t   cl_mod_lightning;
 qhandle_t   cl_mod_heatbeam;
 qhandle_t   cl_mod_explo4_big;
 
+typedef struct {
+    int         num_sfx; // if -1, not loaded yet
+    qhandle_t   *sfx;
+} cl_footstep_sfx_t;
+
+static cl_footstep_sfx_t   *cl_footstep_sfx;
+static int                  cl_num_footsteps;
+
+/*
+=================
+CL_PlayFootstepSfx
+=================
+*/
+void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
+{
+    Q_assert (step_id >= 0 && step_id < cl_num_footsteps);
+
+    const cl_footstep_sfx_t *sfx = &cl_footstep_sfx[step_id];
+
+    if (!sfx->num_sfx) {
+        if (step_id == FOOTSTEP_ID_DEFAULT) {
+            return; // no footsteps, not even fallbacks
+        }
+
+        CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, entnum, volume, attn);
+        return;
+    }
+
+    S_StartSound(NULL, entnum, CHAN_BODY, sfx->sfx[Q_rand_uniform(sfx->num_sfx)], volume, attn, 0);
+}
+
+/*
+=================
+CL_RegisterFootstep
+=================
+*/
+static void CL_RegisterFootstep(const char *material, const char *sound_name, cl_footstep_sfx_t *fsfx)
+{
+    const char *footstep_format = (!strcmp(material, "default")) ? "player/%s%d.wav" : "player/steps/%s%d.wav";
+
+    int sfx_id = 1;
+
+    while (true) {
+        char sound_path[MAX_QPATH];
+        Q_strlcpy(sound_path, "sound/", sizeof(sound_path));
+        Q_strlcat(sound_path, va(footstep_format, sound_name, sfx_id), sizeof(sound_path));
+
+        if (!FS_FileExists(sound_path)) {
+            break;
+        }
+
+        sfx_id++;
+    }
+
+    fsfx->num_sfx = sfx_id - 1;
+
+    if (!fsfx->num_sfx) {
+        return;
+    }
+
+    fsfx->sfx = Z_TagMalloc(sizeof(qhandle_t *) * fsfx->num_sfx, TAG_SOUND);
+
+    for (int i = 0; i < fsfx->num_sfx; i++) {
+        fsfx->sfx[i] = S_RegisterSound(va(footstep_format, sound_name, i + 1));
+    }
+}
+
+/*
+=================
+CL_RegisterFootsteps
+=================
+*/
+static void CL_RegisterFootsteps(void)
+{
+    if (cl_footstep_sfx) {
+        for (int i = 0; i < cl_num_footsteps; i++) {
+            Z_Free(cl_footstep_sfx[i].sfx);
+        }
+
+        Z_Free(cl_footstep_sfx);
+    }
+
+    cl_num_footsteps = FOOTSTEP_RESERVED_COUNT;
+
+    for (int i = 0; i < cl.bsp->numtexinfo; i++) {
+        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id);
+    }
+
+    cl_footstep_sfx = Z_TagMalloc(sizeof(cl_footstep_sfx_t) * cl_num_footsteps, TAG_SOUND);
+
+    for (int i = 0; i < cl_num_footsteps; i++) {
+        cl_footstep_sfx[i].num_sfx = -1;
+        cl_footstep_sfx[i].sfx = NULL;
+    }
+    
+    // load reserved footsteps
+    CL_RegisterFootstep("default", "step", &cl_footstep_sfx[FOOTSTEP_ID_DEFAULT]);
+    CL_RegisterFootstep("ladder", "ladder", &cl_footstep_sfx[FOOTSTEP_ID_LADDER]);
+    
+    // load the rest
+    for (int i = 0; i < cl.bsp->numtexinfo; i++) {
+        const mtexinfo_t *texinfo = &cl.bsp->texinfo[i];
+
+        if (cl_footstep_sfx[texinfo->step_id].num_sfx == -1) {
+            CL_RegisterFootstep(texinfo->c.material, texinfo->c.material, &cl_footstep_sfx[texinfo->step_id]);
+        }
+    }
+}
+
 /*
 =================
 CL_RegisterTEntSounds
@@ -59,9 +166,6 @@ CL_RegisterTEntSounds
 */
 void CL_RegisterTEntSounds(void)
 {
-    int     i;
-    char    name[MAX_QPATH];
-
     cl_sfx_ric1 = S_RegisterSound("world/ric1.wav");
     cl_sfx_ric2 = S_RegisterSound("world/ric2.wav");
     cl_sfx_ric3 = S_RegisterSound("world/ric3.wav");
@@ -78,17 +182,7 @@ void CL_RegisterTEntSounds(void)
     S_RegisterSound("player/fall2.wav");
     S_RegisterSound("player/fall1.wav");
 
-    for (i = 0; i < 4; i++) {
-        Q_snprintf(name, sizeof(name), "player/step%i.wav", i + 1);
-        cl_sfx_footsteps[i] = S_RegisterSound(name);
-    }
-
-    if (cl.csr.extended) {
-        for (i = 0; i < 5; i++) {
-            Q_snprintf(name, sizeof(name), "player/steps/ladder%i.wav", i + 1);
-            cl_sfx_laddersteps[i] = S_RegisterSound(name);
-        }
-    }
+    CL_RegisterFootsteps();
 
     cl_sfx_lightning = S_RegisterSound("weapons/tesla.wav");
     cl_sfx_disrexp = S_RegisterSound("weapons/disrupthit.wav");
