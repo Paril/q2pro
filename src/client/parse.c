@@ -1275,7 +1275,7 @@ static void CL_SkipDamage(void)
 
     for (uint8_t i = 0; i < count; i++)
     {
-        uint8_t encoded = MSG_ReadByte();
+        /*uint8_t encoded = */MSG_ReadByte();
         vec3_t dir;
         MSG_ReadDir(dir);
     }
