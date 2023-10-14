@@ -494,6 +494,9 @@ POLYGONS BUILDING
      (double)(x)[1]*(y)[1]+\
      (double)(x)[2]*(y)[2])
 
+static int32_t fullbright_modified;
+static int32_t vertexlight_modified;
+
 static uint32_t color_for_surface(mface_t *surf)
 {
     if (surf->drawflags & SURF_TRANS33)
@@ -840,8 +843,8 @@ static void upload_world_surfaces(void)
         qglBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    gl_fullbright->modified = false;
-    gl_vertexlight->modified = false;
+    fullbright_modified = gl_fullbright->modified_count;
+    vertexlight_modified = gl_vertexlight->modified_count;
 }
 
 static void set_world_size(void)
@@ -877,7 +880,7 @@ void GL_RebuildLighting(void)
     }
 
     // if did vertex lighting previously, rebuild all surfaces and lightmaps
-    if (gl_fullbright->modified || gl_vertexlight->modified) {
+    if (gl_fullbright->modified_count != fullbright_modified || gl_vertexlight->modified_count != vertexlight_modified) {
         LM_BeginBuilding();
         upload_world_surfaces();
         LM_EndBuilding();
