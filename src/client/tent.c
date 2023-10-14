@@ -60,12 +60,35 @@ static int                  cl_num_footsteps;
 
 /*
 =================
+CL_FindFootstepSurface
+=================
+*/
+static int CL_FindFootstepSurface(int entnum)
+{
+    centity_t *cent = &cl_entities[entnum];
+
+    // not in our frame so don't bother doing calculations
+    if (cent->serverframe != cl.frame.number) {
+        return FOOTSTEP_ID_DEFAULT;
+    }
+
+    // TODO: implement
+
+    return FOOTSTEP_ID_DEFAULT;
+}
+
+/*
+=================
 CL_PlayFootstepSfx
 =================
 */
 void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
 {
-    Q_assert (step_id >= 0 && step_id < cl_num_footsteps);
+    Q_assert (step_id < cl_num_footsteps);
+
+    if (step_id == -1) {
+        step_id = CL_FindFootstepSurface(entnum);
+    }
 
     const cl_footstep_sfx_t *sfx = &cl_footstep_sfx[step_id];
 
