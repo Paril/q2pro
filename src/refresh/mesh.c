@@ -688,27 +688,6 @@ static void tess_shell_skel_prepare(const md5_model_t *mesh, const md5_joint_t *
 
 // static skel functions
 
-static void tess_static_plain_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_plain_skel_prepare(mesh, skeleton);
-}
-
-static void tess_static_shade_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_shade_skel_prepare(mesh, skeleton);
-}
-
-static void tess_static_shell_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_shell_skel_prepare(mesh, skeleton);
-}
-
 // interpolate skel_a and skel_b into the output skeleton
 static inline void tess_skel_interpolate_skeleton (const md5_joint_t *skel_a, const md5_joint_t *skel_b,
 	int num_joints, md5_joint_t *out)
