@@ -1661,7 +1661,7 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
         goto fail;
 
     // md5 exists!
-    if (ret = MOD_LoadMD5Mesh(model, buffer, joint_names)) {
+    if ((ret = MOD_LoadMD5Mesh(model, buffer, joint_names)) != 0) {
         goto fail;
     }
 
@@ -1673,7 +1673,7 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
     if (!buffer)
         goto fail;
 
-    if (ret = MOD_LoadMD5Anim(model, anim_path, buffer)) {
+    if ((ret = MOD_LoadMD5Anim(model, anim_path, buffer)) != 0) {
         goto fail;
     }
 
