@@ -1298,6 +1298,11 @@ static void MD5_ComputeNormals (md5_weight_t *weights, md5_joint_t *base, md5_ve
 static int MOD_LoadMD5Anim(model_t *model, const char *anim_path, const char *file_buffer)
 {
     int ret = 0;
+    // temporary info for building skeleton frames
+	joint_info_t *joint_infos = NULL;
+	baseframe_joint_t *base_frame = NULL;
+	float *anim_frame_data = NULL;
+
 
     // parse header
     if (!MOD_LoadMD5Header(model, &file_buffer, &ret)) {
@@ -1306,11 +1311,6 @@ static int MOD_LoadMD5Anim(model_t *model, const char *anim_path, const char *fi
     
     md5_model_t *anim = model->skeleton;
     
-    // temporary info for building skeleton frames
-	joint_info_t *joint_infos = NULL;
-	baseframe_joint_t *base_frame = NULL;
-	float *anim_frame_data = NULL;
-
     int32_t num_animated_components = -1;
 
     // initial invalid value, to catch out of bounds errors
@@ -1632,6 +1632,8 @@ fail:
 
 static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joint_names)
 {
+    int ret = 0;
+
     char model_name[MAX_QPATH], mesh_path[MAX_QPATH];
     COM_SplitPath(name, model_name, sizeof(model_name), mesh_path, sizeof(mesh_path), true);
 
@@ -1657,8 +1659,6 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
 
     if (!buffer)
         goto fail;
-    
-    int ret = 0;
 
     // md5 exists!
     if (ret = MOD_LoadMD5Mesh(model, buffer, joint_names)) {
