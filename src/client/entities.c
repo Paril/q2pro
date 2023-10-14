@@ -240,7 +240,7 @@ static void parse_entity_event(int number)
         break;
     case EV_LADDER_STEP:
         if (cl.csr.extended && cl_footsteps->integer)
-            CL_PlayFootstepSfx(FOOTSTEP_ID_LADDER, number, 1.0f, ATTN_NORM);
+            CL_PlayFootstepSfx(FOOTSTEP_ID_LADDER, number, 0.5f, ATTN_IDLE);
         break;
     case EV_FALLSHORT:
         S_StartSound(NULL, number, CHAN_AUTO, S_RegisterSound("player/land1.wav"), 1, ATTN_NORM, 0);
