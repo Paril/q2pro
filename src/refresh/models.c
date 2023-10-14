@@ -807,7 +807,7 @@ static inline bool MD5_ParseExpect(const char **buffer, const char *expect_token
 static inline bool MD5_ParseFloat(const char **buffer, float *output)
 {
     const char *token = COM_Parse(buffer);
-    const char *endptr;
+    char *endptr;
     *output = strtof(token, &endptr);
     return endptr != token;
 }
@@ -818,9 +818,18 @@ static inline bool MD5_ParseFloat(const char **buffer, float *output)
 static inline bool MD5_ParseInt32(const char **buffer, int32_t *output)
 {
     const char *token = COM_Parse(buffer);
-    const char *endptr;
+    char *endptr;
     *output = strtol(token, &endptr, 10);
     return endptr != token;
+}
+
+static inline bool MD5_ParseGLINDEX(const char **buffer, QGL_INDEX_TYPE *output)
+{
+    int32_t i;
+    if (!MD5_ParseInt32(buffer, &i))
+        return false;
+    *output = i;
+    return true;
 }
 
 #define MD5_CHECK(x) \
@@ -1022,9 +1031,9 @@ static int MOD_LoadMD5Mesh(model_t *model, const char *file_buffer, maliasskinna
 
                     QGL_INDEX_TYPE *triangle = &index_data[(tri_index * 3) + index_offset];
                     
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[0]));
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[1]));
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[2]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[0]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[1]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[2]));
 
                     for (int32_t i = 0; i < 3; i++) {
                         triangle[i] += vertex_offset;
@@ -1529,7 +1538,7 @@ static void MOD_LoadMD5Scale(model_t *model, const char *name, maliasskinname_t 
     char *buffer = NULL;
     jsmntok_t *tokens = NULL;
 
-    int32_t buffer_len = FS_LoadFile(scale_path, &buffer);
+    int32_t buffer_len = FS_LoadFile(scale_path, (void**)&buffer);
 
     if (!buffer)
         return;
@@ -1644,7 +1653,7 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
     // load md5
     char *buffer = NULL;
         
-    FS_LoadFile(mesh_path, &buffer);
+    FS_LoadFile(mesh_path, (void**)&buffer);
 
     if (!buffer)
         goto fail;
@@ -1659,7 +1668,7 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
     FS_FreeFile(buffer);
             
     // load md5anim
-    FS_LoadFile(anim_path, &buffer);
+    FS_LoadFile(anim_path, (void**)&buffer);
 
     if (!buffer)
         goto fail;
