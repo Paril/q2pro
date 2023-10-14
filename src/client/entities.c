@@ -238,7 +238,7 @@ static void parse_entity_event(int number)
         break;
     case EV_OTHER_FOOTSTEP:
         if (cl.csr.extended && cl_footsteps->integer)
-            S_StartSound(NULL, number, CHAN_BODY, cl_sfx_footsteps[Q_rand() & 3], 1, ATTN_IDLE, 0);
+            S_StartSound(NULL, number, CHAN_BODY, cl_sfx_footsteps[Q_rand() & 3], 0.5f, ATTN_IDLE, 0);
         break;
     case EV_LADDER_STEP:
         if (cl.csr.extended && cl_footsteps->integer)
