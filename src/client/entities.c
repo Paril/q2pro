@@ -209,10 +209,10 @@ static void parse_entity_event(int number)
         if (cent->current.effects & EF_TELEPORTER)
             CL_TeleporterParticles(cent->current.origin);
 
-        if (cent->current.morefx & EFX_TELEPORTER2)
+        if (cent->current.effects & EF_TELEPORTER2)
             CL_TeleporterParticles2(cent->current.origin);
 
-        if (cent->current.morefx & EFX_BARREL_EXPLODING)
+        if (cent->current.effects & EF_BARREL_EXPLODING)
             CL_BarrelExplodingParticles(cent->current.origin);
     }
 
@@ -556,7 +556,7 @@ static void CL_AddPacketEntities(void)
             renderfx |= RF_SHELL_HALF_DAM;
         }
 
-        if (s1->morefx & EFX_DUALFIRE) {
+        if (effects & EF_DUALFIRE) {
             effects |= EF_COLOR_SHELL;
             renderfx |= RF_SHELL_LITE_GREEN;
         }
@@ -752,7 +752,7 @@ static void CL_AddPacketEntities(void)
                 ent.angles[ROLL] = -ent.angles[ROLL];
         }
 
-        if (s1->morefx & EFX_FLASHLIGHT) {
+        if (effects & EF_FLASHLIGHT) {
             vec3_t forward, start, end;
             trace_t trace;
             const int mask = CONTENTS_SOLID | CONTENTS_MONSTER | CONTENTS_PLAYER;
@@ -774,7 +774,7 @@ static void CL_AddPacketEntities(void)
             CL_AdvanceValue(&cent->flashlightfrac, trace.fraction, 1);
         }
 
-        if (s1->morefx & EFX_GRENADE_LIGHT)
+        if (effects & EF_GRENADE_LIGHT)
             V_AddLight(ent.origin, 100, 1, 1, 0);
 
         if (s1->number == cl.frame.clientNum + 1) {
@@ -946,7 +946,7 @@ static void CL_AddPacketEntities(void)
             }
         }
 
-        if (s1->morefx & EFX_HOLOGRAM)
+        if (effects & EF_HOLOGRAM)
             CL_HologramParticles(ent.origin);
 
         // add automatic particle trails
@@ -1052,7 +1052,7 @@ static int shell_effect_hack(void)
         flags |= RF_SHELL_DOUBLE;
     if (ent->current.effects & EF_HALF_DAMAGE)
         flags |= RF_SHELL_HALF_DAM;
-    if (ent->current.morefx & EFX_DUALFIRE)
+    if (ent->current.effects & EF_DUALFIRE)
         flags |= RF_SHELL_LITE_GREEN;
 
     return flags;
