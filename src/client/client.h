@@ -965,6 +965,8 @@ void    SCR_DrawStringMulti(int x, int y, int flags, size_t maxlen, const char *
 void    SCR_ClearChatHUD_f(void);
 void    SCR_AddToChatHUD(const char *text);
 
+void    SCR_AddToDamageDisplay(int damage, const vec3_t color, const vec3_t dir);
+
 //
 // cin.c
 //
