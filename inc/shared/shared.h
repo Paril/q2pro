@@ -1151,6 +1151,8 @@ enum {
     CHAN_RELIABLE       = BIT(4),   // send by reliable message, not datagram
 };
 
+typedef uint8_t soundchan_t;
+
 // sound attenuation values
 #define ATTN_LOOP_NONE          -1  // ugly hack for remaster
 #define ATTN_NONE               0   // full volume the entire level
