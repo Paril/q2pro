@@ -158,7 +158,7 @@ static void CL_RegisterFootsteps(void)
     cl_num_footsteps = FOOTSTEP_RESERVED_COUNT;
 
     for (int i = 0; i < cl.bsp->numtexinfo; i++) {
-        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id);
+        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id + 1);
     }
 
     cl_footstep_sfx = Z_TagMalloc(sizeof(cl_footstep_sfx_t) * cl_num_footsteps, TAG_SOUND);
