@@ -59,6 +59,9 @@ typedef struct {
 
 static cl_footstep_sfx_t   *cl_footstep_sfx;
 static int                  cl_num_footsteps;
+static qhandle_t            cl_last_footstep;
+
+extern mtexinfo_t nulltexinfo;
 
 /*
 =================
@@ -67,16 +70,60 @@ CL_FindFootstepSurface
 */
 static int CL_FindFootstepSurface(int entnum)
 {
+    int footstep_id = FOOTSTEP_ID_DEFAULT;
     centity_t *cent = &cl_entities[entnum];
 
     // not in our frame so don't bother doing calculations
     if (cent->serverframe != cl.frame.number) {
-        return FOOTSTEP_ID_DEFAULT;
+        return footstep_id;
     }
 
-    // TODO: implement
+    // use an X/Y only mins/maxs copy of the entity , since we don't want it to get caught inside of any geometry above or below
+    const vec3_t trace_mins = {cent->mins[0], cent->mins[1], 0};
+    const vec3_t trace_maxs = {cent->maxs[0], cent->maxs[1], 0};
 
-    return FOOTSTEP_ID_DEFAULT;
+    //trace start position is the entity's current interpolated origin + { 0 0 1 }, so that entities with their mins at 0 won't get caught in the floor
+    vec3_t trace_start;
+    LerpVector(cent->prev.origin, cent->current.origin, cl.lerpfrac, trace_start);
+    trace_start[2] += 1;
+
+    // the end of the trace starts down by half of STEPSIZE
+    vec3_t trace_end;
+    VectorCopy(trace_start, trace_end);
+    trace_end[2] -= STEPSIZE / 2;
+    if(cent->current.solid && cent->current.solid != PACKED_BSP) {
+        // if the entity is a bbox'd entity, the mins.z is added to the end point as well
+        trace_end[2] += cent->mins[2];
+    } else {
+        // otherwise use a value that should cover every monster in the game
+        trace_end[2] -= 66; // should you wonder: monster_guardian is the biggest boi
+    }
+
+    // first, a trace done solely against MASK_SOLID
+    trace_t tr;
+    CL_Trace(&tr, trace_start, trace_mins, trace_maxs, trace_end, NULL, MASK_SOLID);
+
+    if(tr.fraction == 1.0f) {
+        // if we didn't hit anything, use default step ID
+        return footstep_id;
+    }
+
+    if (tr.surface != &(nulltexinfo.c)) {
+        // copy over the surfaces' step ID
+        footstep_id = cl.bsp->texinfo[tr.surface->id - 1].step_id;
+
+        // do another trace that ends instead at endpos + { 0 0 1 }, and is against MASK_SOLID | MASK_WATER
+        vec3_t new_end;
+        VectorCopy(tr.endpos, new_end);
+        new_end[2] += 1;
+
+        CL_Trace(&tr, trace_start, trace_mins, trace_maxs, new_end, NULL, MASK_SOLID | MASK_WATER);
+        // if we hit something else, use that new footstep id instead of the first traces' value
+        if (tr.surface != &(nulltexinfo.c))
+            footstep_id = cl.bsp->texinfo[tr.surface->id - 1].step_id;
+    }
+
+    return footstep_id;
 }
 
 /*
@@ -103,7 +150,15 @@ void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
         return;
     }
 
-    S_StartSound(NULL, entnum, CHAN_BODY, sfx->sfx[Q_rand_uniform(sfx->num_sfx)], volume, attn, 0);
+    // Pick a random footstep sound, but avoid playing the same one twice in a row
+    int sfx_num = Q_rand_uniform(sfx->num_sfx);
+    qhandle_t footstep_sfx = sfx->sfx[sfx_num];
+    if (footstep_sfx == cl_last_footstep) {
+        footstep_sfx = sfx->sfx[(sfx_num + 1) % sfx->num_sfx];
+    }
+
+    S_StartSound(NULL, entnum, CHAN_BODY, footstep_sfx, volume, attn, 0);
+    cl_last_footstep = footstep_sfx;
 }
 
 /*
@@ -149,18 +204,24 @@ CL_RegisterFootsteps
 */
 static void CL_RegisterFootsteps(void)
 {
+    cl_last_footstep = -1;
+
     if (cl_footstep_sfx) {
         for (int i = 0; i < cl_num_footsteps; i++) {
-            Z_Free(cl_footstep_sfx[i].sfx);
+            Z_Freep(&cl_footstep_sfx[i].sfx);
         }
 
-        Z_Free(cl_footstep_sfx);
+        Z_Freep(&cl_footstep_sfx);
+    }
+    if(!cl.bsp) {
+        cl_num_footsteps = 0;
+        return;
     }
 
     cl_num_footsteps = FOOTSTEP_RESERVED_COUNT;
 
     for (int i = 0; i < cl.bsp->numtexinfo; i++) {
-        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id);
+        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id + 1);
     }
 
     cl_footstep_sfx = Z_TagMalloc(sizeof(cl_footstep_sfx_t) * cl_num_footsteps, TAG_SOUND);
