@@ -116,6 +116,9 @@ static bool GetWavinfo(sizebuf_t *sz)
     case 16:
         s_info.width = 2;
         break;
+    case 24:
+        s_info.width = 3;
+        break;
     default:
         Com_DPrintf("%s has bad width\n", s_info.name);
         return false;
