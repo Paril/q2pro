@@ -294,6 +294,8 @@ typedef struct client_state_s {
     float sv_frametime_inv;
     int32_t sv_frametime;
     int32_t sv_framediv;
+
+    int     hit_marker_frame, hit_marker_time;
 } client_state_t;
 
 extern client_state_t   cl;
