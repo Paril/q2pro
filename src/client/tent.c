@@ -57,6 +57,7 @@ typedef struct {
 
 static cl_footstep_sfx_t   *cl_footstep_sfx;
 static int                  cl_num_footsteps;
+static qhandle_t            cl_last_footstep;
 
 extern mtexinfo_t nulltexinfo;
 
@@ -147,7 +148,15 @@ void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
         return;
     }
 
-    S_StartSound(NULL, entnum, CHAN_BODY, sfx->sfx[Q_rand_uniform(sfx->num_sfx)], volume, attn, 0);
+    // Pick a random footstep sound, but avoid playing the same one twice in a row
+    int sfx_num = Q_rand_uniform(sfx->num_sfx);
+    qhandle_t footstep_sfx = sfx->sfx[sfx_num];
+    if (footstep_sfx == cl_last_footstep) {
+        footstep_sfx = sfx->sfx[(sfx_num + 1) % sfx->num_sfx];
+    }
+
+    S_StartSound(NULL, entnum, CHAN_BODY, footstep_sfx, volume, attn, 0);
+    cl_last_footstep = footstep_sfx;
 }
 
 /*
@@ -193,6 +202,8 @@ CL_RegisterFootsteps
 */
 static void CL_RegisterFootsteps(void)
 {
+    cl_last_footstep = -1;
+
     if (cl_footstep_sfx) {
         for (int i = 0; i < cl_num_footsteps; i++) {
             Z_Freep(&cl_footstep_sfx[i].sfx);
