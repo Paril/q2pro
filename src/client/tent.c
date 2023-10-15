@@ -149,10 +149,14 @@ static void CL_RegisterFootsteps(void)
 {
     if (cl_footstep_sfx) {
         for (int i = 0; i < cl_num_footsteps; i++) {
-            Z_Free(cl_footstep_sfx[i].sfx);
+            Z_Freep(&cl_footstep_sfx[i].sfx);
         }
 
-        Z_Free(cl_footstep_sfx);
+        Z_Freep(&cl_footstep_sfx);
+    }
+    if(!cl.bsp) {
+        cl_num_footsteps = 0;
+        return;
     }
 
     cl_num_footsteps = FOOTSTEP_RESERVED_COUNT;
