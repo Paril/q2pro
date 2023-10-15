@@ -232,11 +232,11 @@ static void parse_entity_event(int number)
         break;
     case EV_FOOTSTEP:
         if (cl_footsteps->integer)
-            CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, number, 1.0f, ATTN_NORM);
+            CL_PlayFootstepSfx(-1, number, 1.0f, ATTN_NORM);
        break;
     case EV_OTHER_FOOTSTEP:
         if (cl.csr.extended && cl_footsteps->integer)
-            CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, number, 0.5f, ATTN_IDLE);
+            CL_PlayFootstepSfx(-1, number, 0.5f, ATTN_IDLE);
         break;
     case EV_LADDER_STEP:
         if (cl.csr.extended && cl_footsteps->integer)
