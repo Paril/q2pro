@@ -443,6 +443,7 @@ static int MOD_LoadMD2(model_t *model, const void *rawdata, size_t length)
         }
         FS_NormalizePath(skinname);
         mesh->skins[i] = IMG_Find(skinname, IT_SKIN, IF_NONE);
+
         src_skin += MD2_MAX_SKINNAME;
     }
 
@@ -1683,7 +1684,7 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
         // build md5 path
         Q_strlcat(skin_path, "md5/", sizeof(skin_path));
         Q_strlcat(skin_path, skin_name, sizeof(skin_path));
-
+        
         model->skeleton->skins[i] = IMG_Find(skin_path, IT_SKIN, IF_NONE);
     }
 

@@ -534,28 +534,43 @@ static inline void draw_shadow(QGL_INDEX_TYPE *indices, uint32_t num_indices)
     }
 }
 
-static inline int texnum_for_model(int32_t num_skins, image_t **skins)
+static inline void texnums_for_model(int num_skins, image_t **skins, int *diffuse_skin, int *glow_skin)
 {
     const entity_t *ent = glr.ent;
 
-    if (ent->flags & RF_SHELL_MASK)
-        return TEXNUM_WHITE;
+    if (ent->flags & RF_SHELL_MASK) {
+        *diffuse_skin = TEXNUM_WHITE;
+        *glow_skin = TEXNUM_BLACK;
+        return;
+    }
 
-    if (ent->skin)
-        return IMG_ForHandle(ent->skin)->texnum;
+    if (ent->skin) {
+        *diffuse_skin = IMG_ForHandle(ent->skin)->texnum;
+        *glow_skin = TEXNUM_BLACK;
+        return;
+    }
 
-    if (!num_skins)
-        return TEXNUM_DEFAULT;
+    if (!num_skins) {
+        *diffuse_skin = TEXNUM_DEFAULT;
+        *glow_skin = TEXNUM_BLACK;
+        return;
+    }
 
     if (ent->skinnum < 0 || ent->skinnum >= num_skins) {
         Com_DPrintf("%s: no such skin: %d\n", "GL_DrawAliasModel", ent->skinnum);
-        return skins[0]->texnum;
+        *diffuse_skin = skins[0]->texnum;
+        *glow_skin = skins[0]->glow_texnum ? skins[0]->glow_texnum : TEXNUM_BLACK;
+        return;
     }
 
-    if (skins[ent->skinnum]->texnum == TEXNUM_DEFAULT)
-        return skins[0]->texnum;
-
-    return skins[ent->skinnum]->texnum;
+    if (skins[ent->skinnum]->texnum == TEXNUM_DEFAULT) {
+        *diffuse_skin = skins[0]->texnum;
+        *glow_skin = skins[0]->glow_texnum ? skins[0]->glow_texnum : TEXNUM_BLACK;
+        return;
+    }
+    
+    *diffuse_skin = skins[ent->skinnum]->texnum;
+    *glow_skin = skins[ent->skinnum]->glow_texnum ? skins[ent->skinnum]->glow_texnum : TEXNUM_BLACK;
 }
 
 static void draw_alias_mesh(const maliasmesh_t *mesh, tessfunc_t tessfunc)
@@ -574,9 +589,16 @@ static void draw_alias_mesh(const maliasmesh_t *mesh, tessfunc_t tessfunc)
     if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT)
         state |= GLS_DEPTHMASK_FALSE;
 
-    GL_StateBits(state);
+    int diffuse, glow;
+    texnums_for_model(mesh->numskins, mesh->skins, &diffuse, &glow);
+    GL_BindTexture(0, diffuse);
 
-    GL_BindTexture(0, texnum_for_model(mesh->numskins, mesh->skins));
+    if (glow != TEXNUM_BLACK) {
+        state |= GLS_GLOWMAP_ENABLE;
+        GL_BindTexture(2, glow);
+    }
+
+    GL_StateBits(state);
 
     (*tessfunc)(mesh);
     c.trisDrawn += mesh->numtris;
@@ -781,9 +803,16 @@ static void draw_alias_skeleton(const md5_model_t *model, skeltessfunc_t tessfun
     if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT)
         state |= GLS_DEPTHMASK_FALSE;
 
-    GL_StateBits(state);
+    int diffuse, glow;
+    texnums_for_model(model->num_skins, model->skins, &diffuse, &glow);
+    GL_BindTexture(0, diffuse);
 
-    GL_BindTexture(0, texnum_for_model(model->num_skins, model->skins));
+    if (glow != TEXNUM_BLACK) {
+        state |= GLS_GLOWMAP_ENABLE;
+        GL_BindTexture(2, glow);
+    }
+
+    GL_StateBits(state);
 
     (*tessfunc)(model);
 
