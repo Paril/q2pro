@@ -657,9 +657,7 @@ static inline void calculate_vertex_for_skeleton(const md5_vertex_t *vert, const
         VectorMA(out_position, weight->bias, wv, out_position);
             
         if (out_normal) {
-            quat_t orient_inv;
-            Quat_Invert(joint->orient, orient_inv);
-            Quat_RotatePoint(orient_inv, vert->normal, wv);
+            Quat_RotatePoint(joint->orient, vert->normal, wv);
             VectorScale(wv, weight->bias, wv);
             VectorAdd(out_normal, wv, out_normal);
         }
@@ -709,27 +707,6 @@ static void tess_shell_skel_prepare(const md5_model_t *mesh, const md5_joint_t *
 }
 
 // static skel functions
-
-static void tess_static_plain_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_plain_skel_prepare(mesh, skeleton);
-}
-
-static void tess_static_shade_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_shade_skel_prepare(mesh, skeleton);
-}
-
-static void tess_static_shell_skel(const md5_model_t *mesh)
-{
-    const md5_joint_t *skeleton = &mesh->skeleton_frames[(oldframenum % mesh->num_frames) * mesh->num_joints];
-
-    tess_shell_skel_prepare(mesh, skeleton);
-}
 
 // interpolate skel_a and skel_b into the output skeleton
 static inline void tess_skel_interpolate_skeleton (const md5_joint_t *skel_a, const md5_joint_t *skel_b,

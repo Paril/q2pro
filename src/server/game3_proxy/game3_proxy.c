@@ -251,6 +251,11 @@ static game3_trace_t wrap_trace(const vec3_t start, const vec3_t mins,
     return tr;
 }
 
+static int wrap_pointcontents(const vec3_t point)
+{
+    return game_import.pointcontents(point);
+}
+
 static void wrap_local_sound(game3_edict_t *target, const vec3_t origin, game3_edict_t *ent, int channel, int soundindex, float volume, float attenuation, float timeofs)
 {
     game_import.local_sound(translate_edict_from_game(target), origin, translate_edict_from_game(ent), channel, soundindex, volume, attenuation, timeofs, 0);
@@ -865,34 +870,34 @@ static void wrap_Pmove_export(pmove_t *pmove)
     }
 }
 
-void *wrap_GetExtension_export(const char *name)
+static void *wrap_GetExtension_export(const char *name)
 {
     return NULL;
 }
 
-void wrap_Bot_SetWeapon(edict_t *botEdict, const int weaponIndex, const bool instantSwitch) {}
-void wrap_Bot_TriggerEdict(edict_t *botEdict, edict_t *edict) {}
-void wrap_Bot_UseItem(edict_t *botEdict, const int32_t itemID) {}
+static void wrap_Bot_SetWeapon(edict_t *botEdict, const int weaponIndex, const bool instantSwitch) {}
+static void wrap_Bot_TriggerEdict(edict_t *botEdict, edict_t *edict) {}
+static void wrap_Bot_UseItem(edict_t *botEdict, const int32_t itemID) {}
 
-int32_t wrap_Bot_GetItemID(const char *classname)
+static int32_t wrap_Bot_GetItemID(const char *classname)
 { /* FIXME: Can we get that info? */
     return 0;
 }
 
-void wrap_Edict_ForceLookAtPoint(edict_t *edict, const vec3_t point)
+static void wrap_Edict_ForceLookAtPoint(edict_t *edict, const vec3_t point)
 {
     // "is only used for the in-game nav editor"
 }
 
-bool wrap_Bot_PickedUpItem(edict_t *botEdict, edict_t *itemEdict) { return false; }
+static bool wrap_Bot_PickedUpItem(edict_t *botEdict, edict_t *itemEdict) { return false; }
 
-bool wrap_Entity_IsVisibleToPlayer(edict_t *ent, edict_t *player)
+static bool wrap_Entity_IsVisibleToPlayer(edict_t *ent, edict_t *player)
 {
     // "is only useful for split screen, can always return true"
     return true;
 }
 
-const shadow_light_data_t *wrap_GetShadowLightData(int32_t entity_number)
+static const shadow_light_data_t *wrap_GetShadowLightData(int32_t entity_number)
 {
     // currently not supported
     return NULL;
@@ -932,7 +937,7 @@ game_export_t *GetGame3Proxy(game_import_t *import, const game_import_ex_t *impo
     import3.unlinkentity = wrap_unlinkentity;
     import3.BoxEdicts = wrap_BoxEdicts;
     import3.trace = wrap_trace;
-    import3.pointcontents = import->pointcontents;
+    import3.pointcontents = wrap_pointcontents;
     import3.setmodel = wrap_setmodel;
     import3.inPVS = wrap_inPVS;
     import3.inPHS = wrap_inPHS;

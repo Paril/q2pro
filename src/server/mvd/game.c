@@ -913,7 +913,7 @@ static void MVD_Forward_f(mvd_client_t *client)
 static void MVD_Say_f(mvd_client_t *client, int argnum)
 {
     mvd_t *mvd = client->mvd;
-    char text[150], hightext[150];
+    char text[150];
     mvd_client_t *other;
     client_t *cl;
     unsigned i, j, delta;
@@ -957,11 +957,6 @@ static void MVD_Say_f(mvd_client_t *client, int argnum)
 
     Q_snprintf(text, sizeof(text), "[MVD] %s: %s",
                client->cl->name, Cmd_ArgsFrom(argnum));
-
-    // color text for legacy clients
-    for (i = 0; text[i]; i++)
-        hightext[i] = text[i] | 128;
-    hightext[i] = 0;
 
     FOR_EACH_MVDCL(other, mvd) {
         cl = other->cl;
@@ -2085,7 +2080,7 @@ static mvd_player_t *MVD_HitPlayer(mvd_client_t *client)
     return target;
 }
 
-static trace_t q_gameabi MVD_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, const edict_t* passent, int contentmask)
+static trace_t q_gameabi MVD_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, const edict_t* passent, contents_t contentmask)
 {
     trace_t trace;
 
@@ -2096,7 +2091,7 @@ static trace_t q_gameabi MVD_Trace(const vec3_t start, const vec3_t mins, const 
     return trace;
 }
 
-static int MVD_PointContents(const vec3_t p)
+static contents_t MVD_PointContents(const vec3_t p)
 {
     return 0;
 }

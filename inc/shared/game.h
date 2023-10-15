@@ -42,6 +42,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define SVF_NOCULL              BIT(10)
 #define SVF_HULL                BIT(11)
 
+typedef uint32_t svflags_t;
+
 // edict->solid values
 
 typedef enum {
@@ -95,7 +97,7 @@ struct gclient_s {
 typedef struct sv_entity_s {
     bool                        init;
     uint64_t                    ent_flags;
-    uint8_t                     buttons;
+    button_t                    buttons;
     uint32_t                    spawnflags;
     int32_t                     item_id;
     int32_t                     armor_type;
@@ -135,11 +137,11 @@ struct edict_s {
 
     //================================
 
-    int         svflags;            // SVF_NOCLIENT, SVF_DEADMONSTER, SVF_MONSTER, etc
+    svflags_t   svflags;            // SVF_NOCLIENT, SVF_DEADMONSTER, SVF_MONSTER, etc
     vec3_t      mins, maxs;
     vec3_t      absmin, absmax, size;
     solid_t     solid;
-    int         clipmask;
+    contents_t  clipmask;
     edict_t     *owner;
 
     //================================
@@ -282,9 +284,9 @@ typedef struct {
     // center-print to player (legacy function)
     void (*Center_Print)(edict_t *ent, const char *message);
 
-    void (*sound)(edict_t *ent, int channel, int soundindex, float volume, float attenuation, float timeofs);
-    void (*positioned_sound)(const vec3_t origin, edict_t *ent, int channel, int soundindex, float volume, float attenuation, float timeofs);
-    void (*local_sound)(edict_t *target, const vec3_t origin, edict_t *ent, int channel, int soundindex, float volume, float attenuation, float timeofs, uint32_t dupe_key);
+    void (*sound)(edict_t *ent, soundchan_t channel, int soundindex, float volume, float attenuation, float timeofs);
+    void (*positioned_sound)(const vec3_t origin, edict_t *ent, soundchan_t channel, int soundindex, float volume, float attenuation, float timeofs);
+    void (*local_sound)(edict_t *target, const vec3_t origin, edict_t *ent, soundchan_t channel, int soundindex, float volume, float attenuation, float timeofs, uint32_t dupe_key);
 
     // config strings hold all the index strings, the lightstyles,
     // and misc data like the sky definition and cdtrack.
@@ -303,9 +305,9 @@ typedef struct {
     void (*setmodel)(edict_t *ent, const char *name);
 
     // collision detection
-    trace_t (* q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, edict_t *passent, int contentmask);
-    trace_t (* q_gameabi clip)(edict_t *entity, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask);
-    int (*pointcontents)(const vec3_t point);
+    trace_t (* q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, edict_t *passent, contents_t contentmask);
+    trace_t (* q_gameabi clip)(edict_t *entity, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, contents_t contentmask);
+    contents_t (*pointcontents)(const vec3_t point);
     qboolean (*inPVS)(const vec3_t p1, const vec3_t p2, bool portals);
     qboolean (*inPHS)(const vec3_t p1, const vec3_t p2, bool portals);
     void (*SetAreaPortalState)(int portalnum, bool open);

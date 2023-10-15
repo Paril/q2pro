@@ -293,6 +293,7 @@ void SV_WriteFrameToClient_Enhanced(client_t *client)
     }
 
     *b1 = svc_frame;
+    *b2 = suppressed;
     *bflags = extraflags;
 
     client->suppress_count = 0;
@@ -402,7 +403,6 @@ void SV_BuildClientFrame(client_t *client)
     mleaf_t     *leaf;
     byte        clientphs[VIS_MAX_BYTES];
     byte        clientpvs[VIS_MAX_BYTES];
-    bool        need_clientnum_fix;
     int         max_packet_entities;
 
     clent = client->edict;

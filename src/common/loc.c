@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "common/cvar.h"
 #include "common/files.h"
 #include "common/common.h"
+#include "common/loc.h"
 
 static cvar_t *loc_file;
 
@@ -250,7 +251,7 @@ size_t Loc_Localize(const char *base, bool allow_in_place, const char **argument
     
     for (size_t i = 0; i < num_arguments; i++) {
         if (!arguments[i]) {
-            Com_WPrintf("%s: invalid argument at position %u\n", __func__, i);
+            Com_WPrintf("%s: invalid argument at position %zu\n", __func__, i);
             return Q_strlcpy(output, base, output_length);
         }
     }
@@ -280,7 +281,7 @@ size_t Loc_Localize(const char *base, bool allow_in_place, const char **argument
     return Q_strlcat(output, str->format + arg->end, output_length);
 }
 
-static void Loc_Unload()
+static void Loc_Unload(void)
 {
     if (!loc_head) {
         return;
@@ -301,21 +302,19 @@ static void Loc_Unload()
 Loc_ReloadFile
 ================
 */
-void Loc_ReloadFile()
+void Loc_ReloadFile(void)
 {
     Loc_Unload();
 
 	char *buffer;
 
-	int64_t len = FS_LoadFile(loc_file->string, &buffer);
+	FS_LoadFile(loc_file->string, (void**)&buffer);
 
 	if (!buffer) {
 		return;
 	}
 
-    size_t line_start = 0;
     size_t num_locs = 0;
-    size_t line_num = 0;
 
     loc_string_t **tail = &loc_head;
 
@@ -352,7 +351,7 @@ void Loc_ReloadFile()
             break;
         }
 
-        char *value = COM_ParseEx(&parse_buf, PARSE_FLAG_ESCAPE, loc.format, sizeof(loc.format));
+        COM_ParseEx(&parse_buf, PARSE_FLAG_ESCAPE, loc.format, sizeof(loc.format));
 
         // skip platform specifiers
         if (has_platform_spec) {
@@ -390,7 +389,7 @@ line_error:
 
 	FS_FreeFile(buffer);
 
-    Com_Printf("Loaded %u localization strings\n", num_locs);
+    Com_Printf("Loaded %zu localization strings\n", num_locs);
 }
 
 /*
@@ -398,7 +397,7 @@ line_error:
 Loc_Init
 ================
 */
-void Loc_Init()
+void Loc_Init(void)
 {
 	loc_file = Cvar_Get("loc_file", "localization/loc_english.txt", 0);
 

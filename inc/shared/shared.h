@@ -253,7 +253,8 @@ float Quat_Normalize(quat_t q);
 void Quat_MultiplyQuat (const quat_t qa, const quat_t qb, quat_t out);
 void Quat_MultiplyVector (const quat_t q, const vec3_t v, quat_t out);
 void Quat_RotatePoint (const quat_t q, const vec3_t in, vec3_t out);
-void Quat_Invert(const quat_t in, quat_t out);
+// Conjugate quaternion. Also, inverse, for unit quaternions (which MD5 quats are)
+void Quat_Conjugate(const quat_t in, quat_t out);
 #endif
 
 void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
@@ -623,6 +624,8 @@ CVARS (console variables)
                                 // but can be set from the command line
 #define CVAR_LATCH      BIT(4)  // save changes until server restart
 
+typedef uint32_t cvar_flags_t;
+
 #if USE_CLIENT || USE_SERVER
 struct cvar_s;
 struct genctx_s;
@@ -636,14 +639,14 @@ typedef struct cvar_s {
     char        *name;
     char        *string;
     char        *latched_string;    // for CVAR_LATCH vars
-    int         flags;
-    qboolean    modified;   // set each time the cvar is changed
+    cvar_flags_t flags;
+    int32_t     modified_count;   // set each time the cvar is changed
     float       value;
     struct cvar_s *next;
+    int         integer;
 
 // ------ new stuff ------
 #if USE_CLIENT || USE_SERVER
-    int         integer;
     char        *default_string;
     xchanged_t      changed;
     xgenerator_t    generator;
@@ -699,6 +702,8 @@ COLLISION DETECTION
 #define CONTENTS_PROJECTILE     BIT(31)
 //KEX
 
+typedef uint32_t contents_t;
+
 #define SURF_LIGHT              BIT(0)      // value will hold the light strength
 #define SURF_SLICK              BIT(1)      // effects game physics
 #define SURF_SKY                BIT(2)      // don't draw, but add to skybox
@@ -716,6 +721,8 @@ COLLISION DETECTION
 #define SURF_N64_SCROLL_Y       BIT(30)
 #define SURF_N64_SCROLL_FLIP    BIT(31)
 //KEX
+
+typedef uint32_t surfflags_t;
 
 // content masks
 #define MASK_ALL                (-1)
@@ -750,7 +757,7 @@ typedef struct cplane_s {
 
 typedef struct csurface_s {
     char        name[32]; // KEX 32
-    int32_t     flags;
+    surfflags_t flags;
     int32_t		value;
 
     // [Paril-KEX]
@@ -766,7 +773,7 @@ typedef struct {
     vec3_t      endpos;     // final position
     cplane_t    plane;      // surface normal at impact
     csurface_t  *surface;   // surface hit
-    int         contents;   // contents on other side of surface hit
+    contents_t  contents;   // contents on other side of surface hit
     struct edict_s  *ent;   // not set by CM_*() functions
 
     // [Paril-KEX] the second-best surface hit from a trace
@@ -800,6 +807,8 @@ typedef enum {
 #define PMF_IGNORE_PLAYER_COLLISION     BIT(7)
 //KEX
 
+typedef uint16_t pmflags_t;
+
 // this structure needs to be communicated bit-accurate
 // from the server to the client to guarantee that
 // prediction stays in sync, so no floats are used.
@@ -810,7 +819,7 @@ typedef struct {
 
     vec3_t      origin;
     vec3_t      velocity;
-    uint16_t    pm_flags;       // ducked, jump_held, etc
+    pmflags_t   pm_flags;       // ducked, jump_held, etc
     uint16_t    pm_time;        // each unit = 8 ms
     int16_t     gravity;
     vec3_t      delta_angles;   // add to command angles to get view direction
@@ -827,14 +836,19 @@ typedef struct {
 #define BUTTON_CROUCH   BIT(4)
 #define BUTTON_ANY      BIT(7)  // any key whatsoever
 
+typedef uint8_t button_t;
+
 // usercmd_t is sent to the server each client frame
 typedef struct usercmd_s {
     byte    msec;
-    uint8_t buttons;
+    button_t buttons;
     vec3_t  angles;
     float   forwardmove, sidemove;
     uint32_t server_frame;
 } usercmd_t;
+
+// For RDF_xxx values
+typedef uint8_t refdef_flags_t;
 
 #define MAXTOUCH    32
 
@@ -868,17 +882,17 @@ typedef struct {
     struct edict_s *player; // opaque handle
 
     // callbacks to test the world
-    trace_t     (* q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, const struct edict_s* passent, int contentmask);
+    trace_t     (* q_gameabi trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, const struct edict_s* passent, contents_t contentmask);
     // [Paril-KEX] clip against world only
-    trace_t     (* q_gameabi clip)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask);
-    int         (*pointcontents)(const vec3_t point);
+    trace_t     (* q_gameabi clip)(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, contents_t contentmask);
+    contents_t  (*pointcontents)(const vec3_t point);
 
     // [KEX] variables (in)
     vec3_t viewoffset; // last viewoffset (for accurate calculation of blending)
 
     // [KEX] results (out)
     vec4_t screen_blend;
-    int rdflags; // merged with rdflags from server
+    refdef_flags_t rdflags; // merged with rdflags from server
     bool jump_sound; // play jump sound
     bool step_clip; // we clipped on top of an object from below
     float impact_delta; // impact delta, for falling damage
@@ -927,15 +941,16 @@ typedef struct {
 #define EF_TRACKERTRAIL     BIT(31)
 //ROGUE
 
-// entity_state_t->morefx flags
 //KEX
-#define EFX_DUALFIRE            BIT(0)
-#define EFX_HOLOGRAM            BIT(1)
-#define EFX_FLASHLIGHT          BIT(2)
-#define EFX_BARREL_EXPLODING    BIT(3)
-#define EFX_TELEPORTER2         BIT(4)
-#define EFX_GRENADE_LIGHT       BIT(5)
+#define EF_DUALFIRE            BIT_ULL(32)
+#define EF_HOLOGRAM            BIT_ULL(33)
+#define EF_FLASHLIGHT          BIT_ULL(34)
+#define EF_BARREL_EXPLODING    BIT_ULL(35)
+#define EF_TELEPORTER2         BIT_ULL(36)
+#define EF_GRENADE_LIGHT       BIT_ULL(37)
 //KEX
+
+typedef uint64_t effects_t;
 
 // entity_state_t->renderfx flags
 #define RF_MINLIGHT         BIT(0)      // allways have some light (viewmodel)
@@ -975,6 +990,8 @@ typedef struct {
 #define RF_FLARE_LOCK_ANGLE RF_MINLIGHT
 #define RF_BEAM_LIGHTNING   (RF_BEAM | RF_GLOW)
 //KEX
+
+typedef uint32_t renderfx_t;
 
 // player_state_t->refdef flags
 #define RDF_UNDERWATER      BIT(0)      // warp the screen as apropriate
@@ -1134,6 +1151,8 @@ enum {
     CHAN_NO_PHS_ADD     = BIT(3),   // send to all clients, not just ones in PHS (ATTN 0 will also do this)
     CHAN_RELIABLE       = BIT(4),   // send by reliable message, not datagram
 };
+
+typedef uint8_t soundchan_t;
 
 // sound attenuation values
 #define ATTN_LOOP_NONE          -1  // ugly hack for remaster
@@ -1323,7 +1342,7 @@ extern int remap_cs_index(int index, const cs_remap_t *from, const cs_remap_t *t
 // ertity events are for effects that take place reletive
 // to an existing entities origin.  Very network efficient.
 // All muzzle flashes really should be converted to events...
-typedef enum {
+enum {
     EV_NONE,
     EV_ITEM_RESPAWN,
     EV_FOOTSTEP,
@@ -1336,7 +1355,9 @@ typedef enum {
     EV_OTHER_FOOTSTEP,
     EV_LADDER_STEP,
 // KEX
-} entity_event_t;
+};
+
+typedef uint8_t entity_event_t;
 
 // entity_state_t is the information conveyed from the server
 // in an update message about entities that the client will
@@ -1351,16 +1372,13 @@ typedef struct entity_state_s {
     int     modelindex2, modelindex3, modelindex4;  // weapons, CTF flags, etc
     int     frame;
     int     skinnum;
-    uint32_t effects;        // PGM - we're filling it, so it needs to be unsigned
-// KEX
-    uint32_t morefx;
-// KEX
-    int     renderfx;
+    effects_t effects;        // PGM - we're filling it, so it needs to be unsigned
+    renderfx_t renderfx;
     int     solid;          // for client side prediction, 8*(bits 0-4) is x/y radius
                             // 8*(bits 5-9) is z down distance, 8(bits10-15) is z up
                             // gi.linkentity sets this properly
     int     sound;          // for looping sounds, to guarantee shutoff
-    uint8_t     event;      // (KEX: uint8_t) impulse events -- muzzle flashes, footsteps, etc
+    entity_event_t event;      // (KEX: uint8_t) impulse events -- muzzle flashes, footsteps, etc
                             // events only go out for a single frame, they
                             // are automatically cleared each frame
 // KEX
@@ -1416,7 +1434,7 @@ typedef struct {
 
     float       fov;            // horizontal field of view
 
-    uint8_t     rdflags;        // KEX uint8_t, refdef flags
+    refdef_flags_t rdflags;        // KEX uint8_t, refdef flags
 
     short       stats[MAX_STATS];       // fast status bar updates
 

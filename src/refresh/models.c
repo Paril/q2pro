@@ -808,7 +808,7 @@ static inline bool MD5_ParseExpect(const char **buffer, const char *expect_token
 static inline bool MD5_ParseFloat(const char **buffer, float *output)
 {
     const char *token = COM_Parse(buffer);
-    const char *endptr;
+    char *endptr;
     *output = strtof(token, &endptr);
     return endptr != token;
 }
@@ -819,9 +819,18 @@ static inline bool MD5_ParseFloat(const char **buffer, float *output)
 static inline bool MD5_ParseInt32(const char **buffer, int32_t *output)
 {
     const char *token = COM_Parse(buffer);
-    const char *endptr;
+    char *endptr;
     *output = strtol(token, &endptr, 10);
     return endptr != token;
+}
+
+static inline bool MD5_ParseGLINDEX(const char **buffer, QGL_INDEX_TYPE *output)
+{
+    int32_t i;
+    if (!MD5_ParseInt32(buffer, &i))
+        return false;
+    *output = i;
+    return true;
 }
 
 #define MD5_CHECK(x) \
@@ -1023,9 +1032,9 @@ static int MOD_LoadMD5Mesh(model_t *model, const char *file_buffer, maliasskinna
 
                     QGL_INDEX_TYPE *triangle = &index_data[(tri_index * 3) + index_offset];
                     
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[0]));
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[1]));
-                    MD5_CHECK(MD5_ParseInt32(&file_buffer, &triangle[2]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[0]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[1]));
+                    MD5_CHECK(MD5_ParseGLINDEX(&file_buffer, &triangle[2]));
 
                     for (int32_t i = 0; i < 3; i++) {
                         triangle[i] += vertex_offset;
@@ -1232,6 +1241,9 @@ static void MD5_ComputeNormals (md5_weight_t *weights, md5_joint_t *base, md5_ve
 		CrossProduct (d1, d2, norm);
 		VectorNormalize (norm);
 
+        /* Weight vertex normals by angle
+         * see eg https://help.autodesk.com/view/MAXDEV/2023/ENU/?guid=computing_vertex_normals_by_weig
+         * for reasoning */
 		const float angle = acos (DotProduct (d1, d2));
 		VectorScale (norm, angle, norm);
 
@@ -1271,11 +1283,14 @@ static void MD5_ComputeNormals (md5_weight_t *weights, md5_joint_t *base, md5_ve
 		if (norm) {
             // Put the bind-pose normal into joint-local space
             // so the animated normal can be computed faster later
+            // Done by transforming the vertex normal by the inverse joint's orientation quaternion of the weight
             for ( int j = 0; j < vert[v].count; ++j ) {
 			    const md5_weight_t *weight = &weights[vert[v].start + j];
 			    const md5_joint_t *joint = &base[weight->joint];
 			    vec3_t wv;
-			    Quat_RotatePoint(joint->orient, *norm, wv);
+                quat_t orient_inv;
+                Quat_Conjugate(joint->orient, orient_inv);
+                Quat_RotatePoint(orient_inv, *norm, wv);
                 VectorMA(vert[v].normal, weight->bias, wv, vert[v].normal);
             }
         }
@@ -1290,6 +1305,11 @@ static void MD5_ComputeNormals (md5_weight_t *weights, md5_joint_t *base, md5_ve
 static int MOD_LoadMD5Anim(model_t *model, const char *anim_path, const char *file_buffer)
 {
     int ret = 0;
+    // temporary info for building skeleton frames
+	joint_info_t *joint_infos = NULL;
+	baseframe_joint_t *base_frame = NULL;
+	float *anim_frame_data = NULL;
+
 
     // parse header
     if (!MOD_LoadMD5Header(model, &file_buffer, &ret)) {
@@ -1298,11 +1318,6 @@ static int MOD_LoadMD5Anim(model_t *model, const char *anim_path, const char *fi
     
     md5_model_t *anim = model->skeleton;
     
-    // temporary info for building skeleton frames
-	joint_info_t *joint_infos = NULL;
-	baseframe_joint_t *base_frame = NULL;
-	float *anim_frame_data = NULL;
-
     int32_t num_animated_components = -1;
 
     // initial invalid value, to catch out of bounds errors
@@ -1530,7 +1545,7 @@ static void MOD_LoadMD5Scale(model_t *model, const char *name, maliasskinname_t 
     char *buffer = NULL;
     jsmntok_t *tokens = NULL;
 
-    int32_t buffer_len = FS_LoadFile(scale_path, &buffer);
+    int32_t buffer_len = FS_LoadFile(scale_path, (void**)&buffer);
 
     if (!buffer)
         return;
@@ -1624,6 +1639,8 @@ fail:
 
 static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joint_names)
 {
+    int ret = 0;
+
     char model_name[MAX_QPATH], mesh_path[MAX_QPATH];
     COM_SplitPath(name, model_name, sizeof(model_name), mesh_path, sizeof(mesh_path), true);
 
@@ -1645,27 +1662,25 @@ static bool MOD_LoadMD5(model_t *model, const char *name, maliasskinname_t **joi
     // load md5
     char *buffer = NULL;
         
-    FS_LoadFile(mesh_path, &buffer);
+    FS_LoadFile(mesh_path, (void**)&buffer);
 
     if (!buffer)
         goto fail;
-    
-    int ret = 0;
 
     // md5 exists!
-    if (ret = MOD_LoadMD5Mesh(model, buffer, joint_names)) {
+    if ((ret = MOD_LoadMD5Mesh(model, buffer, joint_names)) != 0) {
         goto fail;
     }
 
     FS_FreeFile(buffer);
             
     // load md5anim
-    FS_LoadFile(anim_path, &buffer);
+    FS_LoadFile(anim_path, (void**)&buffer);
 
     if (!buffer)
         goto fail;
 
-    if (ret = MOD_LoadMD5Anim(model, anim_path, buffer)) {
+    if ((ret = MOD_LoadMD5Anim(model, anim_path, buffer)) != 0) {
         goto fail;
     }
 
