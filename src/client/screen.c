@@ -1202,6 +1202,17 @@ void SCR_ModeChanged(void)
 
 /*
 ==================
+SCR_Clear
+==================
+*/
+void SCR_Clear(void)
+{
+    memset(scr.damage_entries, 0, sizeof(scr.damage_entries));
+    memset(scr.pois, 0, sizeof(scr.pois));
+}
+
+/*
+==================
 SCR_RegisterMedia
 ==================
 */
@@ -1233,8 +1244,6 @@ void SCR_RegisterMedia(void)
 
     scr.net_pic = R_RegisterPic("net");
     scr.font_pic = R_RegisterFont(scr_font->string);
-
-    memset(scr.damage_entries, 0, sizeof(scr.damage_entries));
 
     scr_crosshair_changed(scr_crosshair);
 }
