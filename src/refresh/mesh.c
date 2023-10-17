@@ -393,8 +393,10 @@ static void setup_color(void)
             }
         }
 
-        for (i = 0; i < 3; i++) {
-            clamp(color[i], 0, 1);
+        if (gl_clamppointlight->integer) {
+            for (i = 0; i < 3; i++) {
+                clamp(color[i], 0, 1);
+            }
         }
     }
 

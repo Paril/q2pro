@@ -297,9 +297,11 @@ void R_LightPoint(const vec3_t origin, vec3_t color)
     int i;
 
     GL_LightPoint(origin, color);
-
-    for (i = 0; i < 3; i++) {
-        clamp(color[i], 0, 1);
+    
+    if (gl_clamppointlight->integer) {
+        for (i = 0; i < 3; i++) {
+            clamp(color[i], 0, 1);
+        }
     }
 }
 
