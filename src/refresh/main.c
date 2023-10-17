@@ -724,6 +724,8 @@ void R_RenderFrame(refdef_t *fd)
 
     GL_OccludeFlares();
 
+    GL_DrawDebugLines();
+
     // go back into 2D mode
     GL_Setup2D();
 
@@ -1074,6 +1076,8 @@ bool R_Init(bool total)
     // register our variables
     GL_Register();
 
+    GL_InitDebugDraw();
+
     GL_InitState();
 
     GL_InitQueries();
@@ -1178,6 +1182,8 @@ void R_BeginRegistration(const char *name)
         Q_concat(fullname, sizeof(fullname), "maps/", name, ".bsp");
         GL_LoadWorld(fullname);
     }
+
+    GL_ClearDebugLines();
 }
 
 /*
