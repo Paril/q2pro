@@ -429,7 +429,7 @@ static void draw_celshading(QGL_INDEX_TYPE *indices, int num_indices)
         return;
 
     GL_BindTexture(0, TEXNUM_BLACK);
-    GL_StateBits(GLS_BLEND_BLEND);
+    GL_StateBits(GLS_BLEND_BLEND | GLS_FOG_ENABLE);
     GL_ArrayBits(GLA_VERTEX);
 
     qglLineWidth(gl_celshading->value * celscale);
@@ -511,7 +511,7 @@ static void draw_shadow(QGL_INDEX_TYPE *indices, int num_indices)
         qglStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
     }
 
-    GL_StateBits(GLS_BLEND_BLEND);
+    GL_StateBits(GLS_BLEND_BLEND | GLS_FOG_ENABLE);
     GL_BindTexture(0, TEXNUM_WHITE);
     GL_ArrayBits(GLA_VERTEX);
 
@@ -559,7 +559,7 @@ static image_t *skin_for_mesh(image_t **skins, int num_skins)
 
 static void draw_alias_mesh(const maliasmesh_t *mesh)
 {
-    glStateBits_t state = GLS_INTENSITY_ENABLE;
+    glStateBits_t state = GLS_INTENSITY_ENABLE | GLS_FOG_ENABLE;
     image_t *skin = skin_for_mesh(mesh->skins, mesh->numskins);
 
     // fall back to entity matrix
@@ -706,7 +706,7 @@ static void lerp_alias_skeleton(const md5_model_t *model)
 
 static void draw_skeleton_mesh(const md5_model_t *model, const md5_mesh_t *mesh, const md5_joint_t *skel)
 {
-    glStateBits_t state = GLS_INTENSITY_ENABLE;
+    glStateBits_t state = GLS_INTENSITY_ENABLE | GLS_FOG_ENABLE;
     image_t *skin = skin_for_mesh(model->skins, model->num_skins);
 
     // fall back to entity matrix
