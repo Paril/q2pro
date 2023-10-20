@@ -23,6 +23,8 @@ extern qhandle_t cl_mod_powerscreen;
 extern qhandle_t cl_mod_laser;
 extern qhandle_t cl_mod_dmspot;
 extern qhandle_t cl_img_flare;
+extern qhandle_t cl_sfx_footsteps[4];
+extern qhandle_t cl_sfx_laddersteps[5];
 
 /*
 =========================================================================

@@ -48,6 +48,7 @@ cvar_t *gl_dynamic;
 cvar_t *gl_dlight_falloff;
 cvar_t *gl_modulate_entities;
 cvar_t *gl_doublelight_entities;
+cvar_t *gl_glowmap_intensity;
 cvar_t *gl_fontshadow;
 cvar_t *gl_shaders;
 #if USE_MD5
@@ -420,18 +421,16 @@ static void make_flare_quad(const entity_t *e, float scale, vec3_t points[4])
     VectorAdd3(e->origin, up, right, points[3]);
 }
 
-#define FLARE_PENDING   1
-#define FLARE_VISIBLE   2
-
 static void GL_OccludeFlares(void)
 {
     vec3_t points[4];
     entity_t *e;
+    glquery_t *q;
     int i;
 
     if (!glr.num_flares)
         return;
-    if (!qglBeginQuery)
+    if (!gl_static.queries)
         return;
 
     GL_LoadMatrix(glr.viewmatrix);
@@ -446,20 +445,24 @@ static void GL_OccludeFlares(void)
         if (!(e->flags & RF_FLARE))
             continue;
 
-        Q_assert((unsigned)e->skinnum < MAX_EDICTS);
-        if (glr.queryflags[e->skinnum] & FLARE_PENDING)
+        q = HashMap_Lookup(glquery_t, gl_static.queries, &e->skinnum);
+        if (q && q->pending)
             continue;
+
+        if (!q) {
+            glquery_t new = { 0 };
+            qglGenQueries(1, &new.query);
+            HashMap_Insert(gl_static.queries, &e->skinnum, &new);
+            q = HashMap_GetValue(glquery_t, gl_static.queries, HashMap_Size(gl_static.queries) - 1);
+        }
 
         make_flare_quad(e, 2.5f, points);
 
-        if (!gl_static.queries[e->skinnum])
-            qglGenQueries(1, &gl_static.queries[e->skinnum]);
-
-        qglBeginQuery(gl_static.samples_passed, gl_static.queries[e->skinnum]);
+        qglBeginQuery(gl_static.samples_passed, q->query);
         qglDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         qglEndQuery(gl_static.samples_passed);
 
-        glr.queryflags[e->skinnum] |= FLARE_PENDING;
+        q->pending = true;
     }
 
     qglEnable(GL_TEXTURE_2D);
@@ -470,27 +473,30 @@ static void GL_DrawFlare(const entity_t *e)
 {
     vec3_t points[4];
     GLuint result;
+    glquery_t *q;
 
-    if (!qglBeginQuery)
+    if (!gl_static.queries)
         return;
 
-    Q_assert((unsigned)e->skinnum < MAX_EDICTS);
-    if (glr.queryflags[e->skinnum] & FLARE_PENDING) {
-        qglGetQueryObjectuiv(gl_static.queries[e->skinnum], GL_QUERY_RESULT_AVAILABLE, &result);
+    q = HashMap_Lookup(glquery_t, gl_static.queries, &e->skinnum);
+    if (!q) {
+        glr.num_flares++;
+        return;
+    }
+
+    if (q->pending) {
+        qglGetQueryObjectuiv(q->query, GL_QUERY_RESULT_AVAILABLE, &result);
         if (result) {
-            qglGetQueryObjectuiv(gl_static.queries[e->skinnum], GL_QUERY_RESULT, &result);
-            if (result)
-                glr.queryflags[e->skinnum] |= FLARE_VISIBLE;
-            else
-                glr.queryflags[e->skinnum] &= ~FLARE_VISIBLE;
-            glr.queryflags[e->skinnum] &= ~FLARE_PENDING;
+            qglGetQueryObjectuiv(q->query, GL_QUERY_RESULT, &result);
+            q->visible = result;
+            q->pending = false;
         }
     }
 
-    if (!(glr.queryflags[e->skinnum] & FLARE_PENDING))
+    if (!q->pending)
         glr.num_flares++;
 
-    if (!(glr.queryflags[e->skinnum] & FLARE_VISIBLE))
+    if (!q->visible)
         return;
 
     GL_LoadMatrix(glr.viewmatrix);
@@ -906,6 +912,7 @@ static void GL_Register(void)
     gl_modulate_entities = Cvar_Get("gl_modulate_entities", "1", 0);
     gl_modulate_entities->changed = gl_modulate_entities_changed;
     gl_doublelight_entities = Cvar_Get("gl_doublelight_entities", "1", 0);
+    gl_glowmap_intensity = Cvar_Get("gl_glowmap_intensity", "0.75", 0);
     gl_fontshadow = Cvar_Get("gl_fontshadow", "0", 0);
     gl_shaders = Cvar_Get("gl_shaders", (gl_config.caps & QGL_CAP_SHADER) ? "1" : "0", CVAR_REFRESH);
 #if USE_MD5
@@ -1033,15 +1040,41 @@ static void GL_PostInit(void)
 
 static void GL_InitQueries(void)
 {
+    if (!qglBeginQuery)
+        return;
+
     gl_static.samples_passed = GL_SAMPLES_PASSED;
     if (gl_config.ver_gl >= QGL_VER(3, 3) || gl_config.ver_es >= QGL_VER(3, 0))
         gl_static.samples_passed = GL_ANY_SAMPLES_PASSED;
+
+    gl_static.queries = HashMap_Create(int, glquery_t, HashInt32, NULL);
 }
 
 static void GL_ShutdownQueries(void)
 {
-    if (qglDeleteQueries)
-        qglDeleteQueries(MAX_EDICTS, gl_static.queries);
+    if (!gl_static.queries)
+        return;
+
+    uint32_t map_size = HashMap_Size(gl_static.queries);
+    for (int i = 0; i < map_size; i++) {
+        glquery_t *q = HashMap_GetValue(glquery_t, gl_static.queries, i);
+        qglDeleteQueries(1, &q->query);
+    }
+
+    HashMap_Destroy(gl_static.queries);
+    gl_static.queries = NULL;
+}
+
+static void GL_ClearQueries(void)
+{
+    if (!gl_static.queries)
+        return;
+
+    uint32_t map_size = HashMap_Size(gl_static.queries);
+    for (int i = 0; i < map_size; i++) {
+        glquery_t *q = HashMap_GetValue(glquery_t, gl_static.queries, i);
+        q->pending = q->visible = false;
+    }
 }
 
 // ==============================================================================
@@ -1187,7 +1220,7 @@ void R_BeginRegistration(const char *name)
         GL_LoadWorld(fullname);
     }
 
-    GL_ClearDebugLines();
+    GL_ClearQueries();
 }
 
 /*

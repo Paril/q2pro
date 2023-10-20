@@ -46,11 +46,11 @@ qhandle_t   cl_mod_powerscreen;
 qhandle_t   cl_mod_laser;
 qhandle_t   cl_mod_dmspot;
 
-qhandle_t   cl_img_flare;
-
 qhandle_t   cl_mod_lightning;
 qhandle_t   cl_mod_heatbeam;
 qhandle_t   cl_mod_explo4_big;
+
+qhandle_t   cl_img_flare;
 
 typedef struct {
     int         num_sfx; // if -1, not loaded yet
@@ -299,7 +299,7 @@ void CL_RegisterTEntModels(void)
     cl_mod_heatbeam = R_RegisterModel("models/proj/beam/tris.md2");
     cl_mod_explo4_big = R_RegisterModel("models/objects/r_explode2/tris.md2");
 
-    cl_img_flare = R_RegisterImage("misc/flare.tga", IT_SKIN, IF_NONE);
+    cl_img_flare = R_RegisterSprite("misc/flare.tga");
 
     // check for remaster powerscreen model (ugly!)
     len = FS_LoadFile("models/items/armor/effect/tris.md2", &data);

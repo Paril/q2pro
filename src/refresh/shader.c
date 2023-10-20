@@ -53,7 +53,7 @@ static void write_block(char *buf)
         mat4 m_proj;
         float u_time; float u_modulate; float u_add; float u_intensity;
         vec2 w_amp; vec2 w_phase;
-        vec2 u_scroll; float fog_sky_factor; float pad0;
+        vec2 u_scroll; float fog_sky_factor; float u_intensity2;
         vec4 global_fog;
         vec4 height_fog_start;
         vec4 height_fog_end;
@@ -154,7 +154,7 @@ static void write_fragment_shader(char *buf, GLbitfield bits)
         if (!(bits & GLS_LIGHTMAP_ENABLE) && (bits & GLS_GLOWMAP_ENABLE)) {
             GLSL(vec4 glowmap = texture(u_glowmap, tc);)
             if (bits & GLS_INTENSITY_ENABLE)
-                GLSL(diffuse.rgb += glowmap.rgb * u_intensity;)
+                GLSL(diffuse.rgb += glowmap.rgb * u_intensity2;)
             else
                 GLSL(diffuse.rgb += glowmap.rgb;)
         }
@@ -429,6 +429,7 @@ static void shader_setup_2d(void)
     gls.u_block.modulate = 1.0f;
     gls.u_block.add = 0.0f;
     gls.u_block.intensity = 1.0f;
+    gls.u_block.intensity2 = 1.0f;
 
     gls.u_block.w_amp[0] = 0.00666f;
     gls.u_block.w_amp[1] = 0.00666f;
@@ -442,6 +443,7 @@ static void shader_setup_3d(void)
     gls.u_block.modulate = gl_modulate->value * gl_modulate_world->value;
     gls.u_block.add = gl_brightness->value;
     gls.u_block.intensity = gl_intensity->value;
+    gls.u_block.intensity2 = gl_intensity->value * gl_glowmap_intensity->value;
 
     gls.u_block.w_amp[0] = 0.0625f;
     gls.u_block.w_amp[1] = 0.0625f;
