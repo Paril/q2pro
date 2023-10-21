@@ -393,12 +393,6 @@ static void setup_color(void)
                     color[i] = m;
             }
         }
-
-        if (gl_clamppointlight->integer) {
-            for (i = 0; i < 3; i++) {
-                clamp(color[i], 0, 1);
-            }
-        }
     }
 
     if (flags & RF_TRANSLUCENT) {

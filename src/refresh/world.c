@@ -334,12 +334,6 @@ void R_LightPoint(const vec3_t origin, vec3_t color)
     int i;
 
     GL_LightPoint(origin, color);
-    
-    if (gl_clamppointlight->integer) {
-        for (i = 0; i < 3; i++) {
-            clamp(color[i], 0, 1);
-        }
-    }
 }
 
 static void GL_MarkLeaves(void)
