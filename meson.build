@@ -59,6 +59,7 @@ client_src = [
   'src/client/tent.c',
   'src/client/view.c',
   'src/common/async.c',
+  'src/common/gamedll.c',
   'src/server/commands.c',
   'src/server/entities.c',
   'src/server/game.c',
@@ -104,6 +105,7 @@ refresh_src = [
 
 server_src = [
   'src/client/null.c',
+  'src/common/gamedll.c',
   'src/server/commands.c',
   'src/server/entities.c',
   'src/server/game.c',
