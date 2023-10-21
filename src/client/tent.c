@@ -52,6 +52,8 @@ qhandle_t   cl_mod_explo4_big;
 
 qhandle_t   cl_img_flare;
 
+qhandle_t   cl_mod_muzzles[MFLASH_TOTAL];
+
 typedef struct {
     int         num_sfx; // if -1, not loaded yet
     qhandle_t   *sfx;
@@ -305,6 +307,9 @@ void CL_RegisterTEntModels(void)
     len = FS_LoadFile("models/items/armor/effect/tris.md2", &data);
     cl.need_powerscreen_scale = len == 2300 && Com_BlockChecksum(data, len) == 0x19fca65b;
     FS_FreeFile(data);
+    
+    cl_mod_muzzles[MFLASH_BLASTER] = R_RegisterModel("models/weapons/v_blast/flash/tris.md2");
+    cl_mod_muzzles[MFLASH_MACHINEGUN] = R_RegisterModel("models/weapons/v_machn/flash/tris.md2");
 }
 
 /*
@@ -404,6 +409,26 @@ static void CL_BFGExplosion(const vec3_t pos)
     ex->ent.flags |= RF_TRANSLUCENT;
     ex->ent.alpha = 0.30f;
     ex->frames = 4;
+}
+
+// muzleflashes
+void CL_AddMuzzleFX(const vec3_t origin, const vec3_t angles, cl_muzzlefx_t fx, float scale, float rotate)
+{
+    Q_assert(fx > MFLASH_NONE && fx < MFLASH_TOTAL);
+
+    explosion_t *ex = CL_AllocExplosion();
+    VectorCopy(origin, ex->ent.origin);
+    VectorCopy(angles, ex->ent.angles);
+    ex->type = ex_mflash;
+    ex->frames = 2;
+    ex->ent.flags = RF_TRANSLUCENT | RF_NOSHADOW | RF_FULLBRIGHT;
+    ex->ent.alpha = 1.0f;
+    ex->start = cl.servertime - CL_FRAMETIME;
+    ex->ent.model = cl_mod_muzzles[fx];
+    ex->ent.scale = scale;
+    // FIXME
+    ex->ent.angles[1] += 180;
+    ex->ent.angles[2] += rotate;
 }
 
 /*

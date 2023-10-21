@@ -357,6 +357,10 @@ void CL_MuzzleFlash2(void)
     dl->radius = 200 + (Q_rand() & 31);
     dl->die = cl.time + 16;
 
+    cl_muzzlefx_t flash_id = MFLASH_NONE;
+    float flash_scale = 1.0f;
+    bool flash_rotate = true;
+
     switch (mz.weapon) {
     case MZ2_INFANTRY_MACHINEGUN_1:
     case MZ2_INFANTRY_MACHINEGUN_2:
@@ -384,6 +388,8 @@ void CL_MuzzleFlash2(void)
         CL_ParticleEffect(origin, vec3_origin, 0, 40);
         CL_SmokeAndFlash(origin);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("infantry/infatck1.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_MACHINEGUN;
+        flash_scale = 18.0f;
         break;
 
     case MZ2_SOLDIER_MACHINEGUN_1:
@@ -399,6 +405,8 @@ void CL_MuzzleFlash2(void)
         CL_ParticleEffect(origin, vec3_origin, 0, 40);
         CL_SmokeAndFlash(origin);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("soldier/solatck3.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_MACHINEGUN;
+        flash_scale = 13.0f;
         break;
 
     case MZ2_GUNNER_MACHINEGUN_1:
@@ -413,6 +421,8 @@ void CL_MuzzleFlash2(void)
         CL_ParticleEffect(origin, vec3_origin, 0, 40);
         CL_SmokeAndFlash(origin);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("gunner/gunatck2.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_MACHINEGUN;
+        flash_scale = 24.0f;
         break;
 
     case MZ2_ACTOR_MACHINEGUN_1:
@@ -427,6 +437,8 @@ void CL_MuzzleFlash2(void)
         CL_ParticleEffect(origin, vec3_origin, 0, 40);
         CL_SmokeAndFlash(origin);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("infantry/infatck1.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_MACHINEGUN;
+        flash_scale = 32.0f;
         break;
 
     case MZ2_BOSS2_MACHINEGUN_L1:
@@ -440,6 +452,8 @@ void CL_MuzzleFlash2(void)
         CL_ParticleEffect(origin, vec3_origin, 0, 40);
         CL_SmokeAndFlash(origin);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("infantry/infatck1.wav"), 1, ATTN_NONE, 0);
+        flash_id = MFLASH_MACHINEGUN;
+        flash_scale = 32.0f;
         break;
 
     case MZ2_SOLDIER_BLASTER_1:
@@ -454,12 +468,16 @@ void CL_MuzzleFlash2(void)
     case MZ2_TURRET_BLASTER:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("soldier/solatck2.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_BLASTER;
+        flash_scale = 8.0f;
         break;
 
     case MZ2_FLYER_BLASTER_1:
     case MZ2_FLYER_BLASTER_2:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("flyer/flyatck3.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_BLASTER;
+        flash_scale = 8.0f;
         break;
 
     case MZ2_MEDIC_BLASTER_1:
@@ -477,17 +495,23 @@ void CL_MuzzleFlash2(void)
     case MZ2_MEDIC_HYPERBLASTER1_12:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("medic/medatck1.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_BLASTER;
+        flash_scale = 8.0f;
         break;
 
     case MZ2_HOVER_BLASTER_1:
     case MZ2_HOVER_BLASTER_2:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("hover/hovatck1.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_BLASTER;
+        flash_scale = 8.0f;
         break;
 
     case MZ2_FLOAT_BLASTER_1:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("floater/fltatck1.wav"), 1, ATTN_NORM, 0);
+        flash_id = MFLASH_BLASTER;
+        flash_scale = 8.0f;
         break;
 
     case MZ2_SOLDIER_SHOTGUN_1:
@@ -784,6 +808,10 @@ void CL_MuzzleFlash2(void)
         VectorSet(dl->color, 1, 0.5f, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("guncmdr/gcdratck3.wav"), 1, ATTN_NORM, 0);
         break;
+    }
+
+    if (flash_id) {
+        CL_AddMuzzleFX(origin, ent->current.angles, flash_id, flash_scale, flash_rotate ? (frand() * 360) : 0);
     }
 }
 
