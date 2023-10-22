@@ -250,8 +250,9 @@ void CL_MuzzleFlash(void)
         S_StartSound(NULL, mz.entity, CHAN_AUTO,   S_RegisterSound("weapons/grenlr1b.wav"), volume, ATTN_NORM, 0.1f);
         break;
     case MZ_BFG:
-        VectorSet(dl->color, 0, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/bfg__f1y.wav"), volume, ATTN_NORM, 0);
+    case MZ_BFG2:
+        VectorSet(dl->color, 0, 1, 0);
         break;
 
     case MZ_LOGIN:
@@ -270,21 +271,25 @@ void CL_MuzzleFlash(void)
         CL_LogoutEffect(pl->current.origin, mz.weapon);
         break;
     case MZ_PHALANX:
-        VectorSet(dl->color, 1, 0.5f, 0.5f);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/plasshot.wav"), volume, ATTN_NORM, 0);
+    case MZ_PHALANX2:
+        VectorSet(dl->color, 1, 0.5f, 0.5f);
         break;
     case MZ_IONRIPPER:
         VectorSet(dl->color, 1, 0.5f, 0.5f);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/rippfire.wav"), volume, ATTN_NORM, 0);
         break;
 
+    case MZ_PROX:
+        VectorSet(dl->color, 1, 0.5f, 0);
+        S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/grenlf1a.wav"), volume, ATTN_NORM, 0);
+        S_StartSound(NULL, mz.entity, CHAN_AUTO,   S_RegisterSound("weapons/proxlr1a.wav"), volume, ATTN_NORM, 0.1f);
+        break;
+        
     case MZ_ETF_RIFLE:
+    case MZ_ETF_RIFLE_2:
         VectorSet(dl->color, 0.9f, 0.7f, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/nail1.wav"), volume, ATTN_NORM, 0);
-        break;
-    case MZ_SHOTGUN2:
-        VectorSet(dl->color, 1, 1, 0);
-        S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/shotg2.wav"), volume, ATTN_NORM, 0);
         break;
     case MZ_HEATBEAM:
         VectorSet(dl->color, 1, 1, 0);

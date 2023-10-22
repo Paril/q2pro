@@ -1030,22 +1030,24 @@ enum {
     MZ_ITEMRESPAWN,
 
 // RAFAEL
-    MZ_IONRIPPER,
-    MZ_BLUEHYPERBLASTER,
-    MZ_PHALANX,
+    MZ_IONRIPPER = 16,
+    MZ_BLUEHYPERBLASTER = 17,
+    MZ_PHALANX = 18,
+    MZ_BFG2 = 19,
+    MZ_PHALANX2 = 20,
 
-//ROGUE
+// ROGUE
     MZ_ETF_RIFLE = 30,
-    MZ_UNUSED,
-    MZ_SHOTGUN2,
-    MZ_HEATBEAM,
-    MZ_BLASTER2,
-    MZ_TRACKER,
-    MZ_NUKE1,
-    MZ_NUKE2,
-    MZ_NUKE4,
-    MZ_NUKE8,
-//ROGUE
+    MZ_PROX = 31, // [Paril-KEX]
+    MZ_ETF_RIFLE_2 = 32, // [Paril-KEX] unused, so using it for the other barrel
+    MZ_HEATBEAM = 33,
+    MZ_BLASTER2 = 34,
+    MZ_TRACKER = 35,
+    MZ_NUKE1 = 36,
+    MZ_NUKE2 = 37,
+    MZ_NUKE4 = 38,
+    MZ_NUKE8 = 39,
+// ROGUE
 
     MZ_SILENCED = BIT(7),  // bit flag ORed with one of the above numbers
 };
