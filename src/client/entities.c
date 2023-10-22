@@ -1170,6 +1170,8 @@ static void CL_AddViewWeapon(void)
             gun.model = cl.weapon.muzzle_model;
             gun.skin = cl.weapon.muzzle_skin;
             gun.scale = cl.weapon.muzzle_scale;
+            gun.backlerp = 0.f;
+            gun.frame = gun.oldframe = 0;
 
             vec3_t forward, right, up;
             AngleVectors(gun.angles, forward, right, up);
