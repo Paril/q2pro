@@ -568,7 +568,8 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
     if (glr.ent->flags & RF_TRANSLUCENT)
         state |= GLS_BLEND_BLEND;
 
-    if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT)
+    if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT ||
+        (glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == (RF_TRANSLUCENT | RF_WEAPONMODEL))
         state |= GLS_DEPTHMASK_FALSE;
 
     if (skin->glow_texnum)
@@ -714,8 +715,9 @@ static void draw_skeleton_mesh(const md5_model_t *model, const md5_mesh_t *mesh,
 
     if (glr.ent->flags & RF_TRANSLUCENT)
         state |= GLS_BLEND_BLEND;
-
-    if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT)
+    
+    if ((glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == RF_TRANSLUCENT ||
+        (glr.ent->flags & (RF_TRANSLUCENT | RF_WEAPONMODEL)) == (RF_TRANSLUCENT | RF_WEAPONMODEL))
         state |= GLS_DEPTHMASK_FALSE;
 
     if (skin->glow_texnum)
