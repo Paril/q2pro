@@ -195,6 +195,7 @@ void CL_MuzzleFlash(void)
     case MZ_HYPERBLASTER:
         VectorSet(dl->color, 1, 1, 0);
         S_StartSound(NULL, mz.entity, CHAN_WEAPON, S_RegisterSound("weapons/hyprbf1a.wav"), volume, ATTN_NORM, 0);
+        CL_AddWeaponMuzzleFX(MFLASH_BLAST, (const vec3_t) { 23.5f, 6.0f, -6.0f }, 0, 9.f, 0.f);
         break;
     case MZ_MACHINEGUN:
         VectorSet(dl->color, 1, 1, 0);
