@@ -1116,23 +1116,21 @@ static void CL_AddViewWeapon(void)
         gun.oldframe = gun_frame;   // development tool
     } else {
 // KEX
-        static int32_t weap_frame, weap_last_frame;
-        static int32_t weap_server_time;
         if (cl.csr.extended) {
             if (ops->gunindex != ps->gunindex) { // just changed weapons, don't lerp from old
-                weap_frame = weap_last_frame = ps->gunframe;
-                weap_server_time = cl.servertime;
-            } else if (weap_frame == -1 || weap_frame != ps->gunframe) {
-                weap_frame = ps->gunframe;
-                weap_last_frame = ops->gunframe;
-                weap_server_time = cl.servertime;
+                cl.weapon.frame = cl.weapon.last_frame = ps->gunframe;
+                cl.weapon.server_time = cl.servertime;
+            } else if (cl.weapon.frame == -1 || cl.weapon.frame != ps->gunframe) {
+                cl.weapon.frame = ps->gunframe;
+                cl.weapon.last_frame = ops->gunframe;
+                cl.weapon.server_time = cl.servertime;
             }
 
             const float gun_ms = 1.f / (!ps->gunrate ? 10 : ps->gunrate) * 1000.f;
-            gun.backlerp = 1.f - ((cl.time - ((float) weap_server_time - cl.sv_frametime)) / gun_ms);
+            gun.backlerp = 1.f - ((cl.time - ((float) cl.weapon.server_time - cl.sv_frametime)) / gun_ms);
             clamp(gun.backlerp, 0.0f, 1.f);
-            gun.frame = weap_frame;
-            gun.oldframe = weap_last_frame;
+            gun.frame = cl.weapon.frame;
+            gun.oldframe = cl.weapon.last_frame;
         } else {
 // KEX
             gun.frame = ps->gunframe;
@@ -1160,6 +1158,31 @@ static void CL_AddViewWeapon(void)
         gun.alpha = 0.30f * cl_gunalpha->value;
         gun.flags |= flags | RF_TRANSLUCENT;
         V_AddEntity(&gun);
+    }
+
+    // add muzzle flash
+    if (cl.weapon.muzzle_model) {
+        if (cl.weapon.muzzle_time < cl.time) {
+            cl.weapon.muzzle_model = 0;
+        } else {
+            gun.flags = RF_FULLBRIGHT | RF_DEPTHHACK | RF_WEAPONMODEL | RF_TRANSLUCENT;
+            gun.alpha = 1.0f;
+            gun.model = cl.weapon.muzzle_model;
+            gun.skin = cl.weapon.muzzle_skin;
+            gun.scale = cl.weapon.muzzle_scale;
+
+            vec3_t forward, right, up;
+            AngleVectors(gun.angles, forward, right, up);
+
+            VectorMA(gun.origin, cl.weapon.muzzle_offset[0], forward, gun.origin);
+            VectorMA(gun.origin, cl.weapon.muzzle_offset[1], right, gun.origin);
+            VectorMA(gun.origin, cl.weapon.muzzle_offset[2], up, gun.origin);
+
+            VectorCopy(cl.refdef.viewangles, gun.angles);
+            gun.angles[2] += cl.weapon.muzzle_roll;
+            
+            V_AddEntity(&gun);
+        }
     }
 }
 

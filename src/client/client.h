@@ -301,6 +301,18 @@ typedef struct client_state_s {
         fog_params_t        start, end;
         int                 lerp_time, lerp_time_start;
     } fog;
+
+    // data for view weapon
+    struct {
+        int32_t frame, last_frame;
+        int32_t server_time;
+
+        qhandle_t muzzle_model;
+        int32_t muzzle_time;
+        float muzzle_roll, muzzle_scale;
+        int32_t muzzle_skin;
+        vec3_t muzzle_offset;
+    } weapon;
 } client_state_t;
 
 extern client_state_t   cl;
@@ -816,6 +828,7 @@ typedef enum {
     MFLASH_TOTAL
 } cl_muzzlefx_t;
 
+void CL_AddWeaponMuzzleFX(cl_muzzlefx_t fx, const vec3_t offset, int skin, float scale, float rotate);
 void CL_AddMuzzleFX(const vec3_t origin, const vec3_t angles, cl_muzzlefx_t fx, int skin, float scale, float rotate);
 
 void CL_SmokeAndFlash(const vec3_t origin);
