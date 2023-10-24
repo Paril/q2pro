@@ -115,6 +115,7 @@ server_src = [
   'src/server/main.c',
   'src/server/send.c',
   'src/server/user.c',
+  'src/server/nav.c',
   'src/server/world.c',
   'src/shared/base85.c',
 ]
@@ -254,7 +255,7 @@ if cc.get_argument_syntax() == 'gcc'
     dll_link_args += '-static-libgcc'
   endif
 elif cc.get_id() == 'msvc'
-  common_args += ['/D_USE_MATH_DEFINES', '/wd4146', '/wd4244', '/wd4305']
+  common_args += ['/D_USE_MATH_DEFINES', '/wd4146', '/wd4244', '/wd4305', '/D_CRT_SECURE_NO_WARNINGS', '/wd4267', '/wd4018']
 endif
 
 add_project_arguments(common_args, language: 'c')

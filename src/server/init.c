@@ -128,6 +128,7 @@ void SV_SpawnServer(const mapcmd_t *cmd)
 
     // free current level
     CM_FreeMap(&sv.cm);
+    Nav_Unload();
 
     // wipe the entire per-level structure
     memset(&sv, 0, sizeof(sv));
@@ -159,6 +160,7 @@ void SV_SpawnServer(const mapcmd_t *cmd)
 
     if (cmd->state == ss_game) {
         sv.cm = cmd->cm;
+        Nav_Load(cmd->server);
         sprintf(sv.configstrings[svs.csr.mapchecksum], "%d", sv.cm.checksum);
 
         // set inline model names
@@ -267,6 +269,7 @@ static bool check_server(mapcmd_t *cmd, const char *server, bool nextserver)
     if (ret < 0) {
         Com_Printf("Couldn't load %s: %s\n", expanded, BSP_ErrorString(ret));
         CM_FreeMap(&cmd->cm);   // free entstring if overridden
+        Nav_Unload();
         return false;
     }
 
@@ -358,6 +361,7 @@ void SV_InitGame(unsigned mvd_spawn)
         SCR_BeginLoadingPlaque();
 
         CM_FreeMap(&sv.cm);
+        Nav_Unload();
         memset(&sv, 0, sizeof(sv));
 
 #if USE_FPS

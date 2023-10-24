@@ -677,9 +677,14 @@ static bool mask_translucent_not_weapons(const entity_t *e)
     return (e->flags & RF_TRANSLUCENT) && !(e->flags & RF_WEAPONMODEL);
 }
 
-static bool mask_weapons(const entity_t *e)
+static bool mask_solid_weapons(const entity_t *e)
 {
-    return e->flags & RF_WEAPONMODEL;
+    return (e->flags & RF_WEAPONMODEL) && !(e->flags & RF_TRANSLUCENT);
+}
+
+static bool mask_translucent_weapons(const entity_t *e)
+{
+    return (e->flags & RF_WEAPONMODEL) && (e->flags & RF_TRANSLUCENT);
 }
 
 void R_RenderFrame(refdef_t *fd)
@@ -740,7 +745,9 @@ void R_RenderFrame(refdef_t *fd)
         GL_DrawAlphaFaces();
     }
 
-    GL_DrawEntities(mask_weapons);
+    GL_DrawEntities(mask_solid_weapons);
+
+    GL_DrawEntities(mask_translucent_weapons);
 
     if (waterwarp) {
         qglBindFramebuffer(GL_FRAMEBUFFER, 0);
