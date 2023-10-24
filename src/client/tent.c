@@ -54,12 +54,14 @@ qhandle_t   cl_img_flare;
 
 qhandle_t   cl_mod_muzzles[MFLASH_TOTAL];
 
+#define MAX_FOOTSTEP_SFX    16
+
 typedef struct {
-    int         num_sfx; // if -1, not loaded yet
-    qhandle_t   *sfx;
+    int         num_sfx;
+    qhandle_t   sfx[MAX_FOOTSTEP_SFX];
 } cl_footstep_sfx_t;
 
-static cl_footstep_sfx_t   *cl_footstep_sfx;
+static cl_footstep_sfx_t    *cl_footstep_sfx;
 static int                  cl_num_footsteps;
 static qhandle_t            cl_last_footstep;
 
@@ -75,25 +77,26 @@ static int CL_FindFootstepSurface(int entnum)
     int footstep_id = FOOTSTEP_ID_DEFAULT;
     centity_t *cent = &cl_entities[entnum];
 
-    // not in our frame so don't bother doing calculations
-    if (cent->serverframe != cl.frame.number) {
+    // skip if no materials loaded
+    if (cl_num_footsteps <= FOOTSTEP_RESERVED_COUNT)
         return footstep_id;
-    }
 
-    // use an X/Y only mins/maxs copy of the entity , since we don't want it to get caught inside of any geometry above or below
-    const vec3_t trace_mins = {cent->mins[0], cent->mins[1], 0};
-    const vec3_t trace_maxs = {cent->maxs[0], cent->maxs[1], 0};
+    // use an X/Y only mins/maxs copy of the entity,
+    // since we don't want it to get caught inside of any geometry above or below
+    const vec3_t trace_mins = { cent->mins[0], cent->mins[1], 0 };
+    const vec3_t trace_maxs = { cent->maxs[0], cent->maxs[1], 0 };
 
-    //trace start position is the entity's current interpolated origin + { 0 0 1 }, so that entities with their mins at 0 won't get caught in the floor
+    // trace start position is the entity's current origin + { 0 0 1 },
+    // so that entities with their mins at 0 won't get caught in the floor
     vec3_t trace_start;
-    LerpVector(cent->prev.origin, cent->current.origin, cl.lerpfrac, trace_start);
+    VectorCopy(cent->current.origin, trace_start);
     trace_start[2] += 1;
 
     // the end of the trace starts down by half of STEPSIZE
     vec3_t trace_end;
     VectorCopy(trace_start, trace_end);
-    trace_end[2] -= STEPSIZE / 2;
-    if(cent->current.solid && cent->current.solid != PACKED_BSP) {
+    trace_end[2] -= 9;
+    if (cent->current.solid && cent->current.solid != PACKED_BSP) {
         // if the entity is a bbox'd entity, the mins.z is added to the end point as well
         trace_end[2] += cent->mins[2];
     } else {
@@ -105,14 +108,14 @@ static int CL_FindFootstepSurface(int entnum)
     trace_t tr;
     CL_Trace(&tr, trace_start, trace_mins, trace_maxs, trace_end, NULL, MASK_SOLID);
 
-    if(tr.fraction == 1.0f) {
+    if (tr.fraction == 1.0f) {
         // if we didn't hit anything, use default step ID
         return footstep_id;
     }
 
     if (tr.surface != &(nulltexinfo.c)) {
         // copy over the surfaces' step ID
-        footstep_id = cl.bsp->texinfo[tr.surface->id - 1].step_id;
+        footstep_id = ((mtexinfo_t *)tr.surface)->step_id;
 
         // do another trace that ends instead at endpos + { 0 0 1 }, and is against MASK_SOLID | MASK_WATER
         vec3_t new_end;
@@ -122,7 +125,7 @@ static int CL_FindFootstepSurface(int entnum)
         CL_Trace(&tr, trace_start, trace_mins, trace_maxs, new_end, NULL, MASK_SOLID | MASK_WATER);
         // if we hit something else, use that new footstep id instead of the first traces' value
         if (tr.surface != &(nulltexinfo.c))
-            footstep_id = cl.bsp->texinfo[tr.surface->id - 1].step_id;
+            footstep_id = ((mtexinfo_t *)tr.surface)->step_id;
     }
 
     return footstep_id;
@@ -133,33 +136,33 @@ static int CL_FindFootstepSurface(int entnum)
 CL_PlayFootstepSfx
 =================
 */
-void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
+void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attenuation)
 {
-    Q_assert (step_id < cl_num_footsteps);
+    const cl_footstep_sfx_t *sfx;
+    qhandle_t footstep_sfx;
+    int sfx_num;
 
-    if (step_id == -1) {
+    if (!cl_num_footsteps)
+        return; // should not really happen
+
+    if (step_id == -1)
         step_id = CL_FindFootstepSurface(entnum);
-    }
 
-    const cl_footstep_sfx_t *sfx = &cl_footstep_sfx[step_id];
+    Q_assert((unsigned)step_id < cl_num_footsteps);
 
-    if (!sfx->num_sfx) {
-        if (step_id == FOOTSTEP_ID_DEFAULT) {
-            return; // no footsteps, not even fallbacks
-        }
+    sfx = &cl_footstep_sfx[step_id];
+    if (!sfx->num_sfx)
+        sfx = &cl_footstep_sfx[0];
+    if (!sfx->num_sfx)
+        return; // no footsteps, not even fallbacks
 
-        CL_PlayFootstepSfx(FOOTSTEP_ID_DEFAULT, entnum, volume, attn);
-        return;
-    }
-
-    // Pick a random footstep sound, but avoid playing the same one twice in a row
-    int sfx_num = Q_rand_uniform(sfx->num_sfx);
-    qhandle_t footstep_sfx = sfx->sfx[sfx_num];
-    if (footstep_sfx == cl_last_footstep) {
+    // pick a random footstep sound, but avoid playing the same one twice in a row
+    sfx_num = Q_rand_uniform(sfx->num_sfx);
+    footstep_sfx = sfx->sfx[sfx_num];
+    if (footstep_sfx == cl_last_footstep)
         footstep_sfx = sfx->sfx[(sfx_num + 1) % sfx->num_sfx];
-    }
 
-    S_StartSound(NULL, entnum, CHAN_BODY, footstep_sfx, volume, attn, 0);
+    S_StartSound(NULL, entnum, CHAN_BODY, footstep_sfx, volume, attenuation, 0);
     cl_last_footstep = footstep_sfx;
 }
 
@@ -168,35 +171,26 @@ void CL_PlayFootstepSfx(int step_id, int entnum, float volume, float attn)
 CL_RegisterFootstep
 =================
 */
-static void CL_RegisterFootstep(const char *material, const char *sound_name, cl_footstep_sfx_t *fsfx)
+static void CL_RegisterFootstep(cl_footstep_sfx_t *sfx, const char *material)
 {
-    const char *footstep_format = (!strcmp(material, "default")) ? "player/%s%d.wav" : "player/steps/%s%d.wav";
+    char name[MAX_QPATH];
+    size_t len;
+    int i;
 
-    int sfx_id = 1;
+    Q_assert(!material || *material);
 
-    while (true) {
-        char sound_path[MAX_QPATH];
-        Q_strlcpy(sound_path, "sound/", sizeof(sound_path));
-        Q_strlcat(sound_path, va(footstep_format, sound_name, sfx_id), sizeof(sound_path));
-
-        if (!FS_FileExists(sound_path)) {
+    for (i = 0; i < MAX_FOOTSTEP_SFX; i++) {
+        if (material)
+            len = Q_snprintf(name, sizeof(name), "#sound/player/steps/%s%i.wav", material, i + 1);
+        else
+            len = Q_snprintf(name, sizeof(name), "#sound/player/step%i.wav", i + 1);
+        Q_assert(len < sizeof(name));
+        if (FS_LoadFile(name + 1, NULL) < 0)
             break;
-        }
-
-        sfx_id++;
+        sfx->sfx[i] = S_RegisterSound(name);
     }
 
-    fsfx->num_sfx = sfx_id - 1;
-
-    if (!fsfx->num_sfx) {
-        return;
-    }
-
-    fsfx->sfx = Z_TagMalloc(sizeof(qhandle_t *) * fsfx->num_sfx, TAG_SOUND);
-
-    for (int i = 0; i < fsfx->num_sfx; i++) {
-        fsfx->sfx[i] = S_RegisterSound(va(footstep_format, sound_name, i + 1));
-    }
+    sfx->num_sfx = i;
 }
 
 /*
@@ -206,44 +200,33 @@ CL_RegisterFootsteps
 */
 static void CL_RegisterFootsteps(void)
 {
-    cl_last_footstep = -1;
+    mtexinfo_t *tex;
+    int i;
 
-    if (cl_footstep_sfx) {
-        for (int i = 0; i < cl_num_footsteps; i++) {
-            Z_Freep(&cl_footstep_sfx[i].sfx);
-        }
+    cl_last_footstep = 0;
 
-        Z_Freep(&cl_footstep_sfx);
-    }
-    if(!cl.bsp) {
+    Z_Freep(&cl_footstep_sfx);
+    if (!cl.bsp) {
         cl_num_footsteps = 0;
         return;
     }
 
-    cl_num_footsteps = FOOTSTEP_RESERVED_COUNT;
+    cl_num_footsteps = BSP_LoadMaterials(cl.bsp);
+    Q_assert(cl_num_footsteps >= FOOTSTEP_RESERVED_COUNT);
+    cl_footstep_sfx = Z_Malloc(sizeof(cl_footstep_sfx[0]) * cl_num_footsteps);
 
-    for (int i = 0; i < cl.bsp->numtexinfo; i++) {
-        cl_num_footsteps = max(cl_num_footsteps, cl.bsp->texinfo[i].step_id + 1);
-    }
-
-    cl_footstep_sfx = Z_TagMalloc(sizeof(cl_footstep_sfx_t) * cl_num_footsteps, TAG_SOUND);
-
-    for (int i = 0; i < cl_num_footsteps; i++) {
+    for (i = 0; i < cl_num_footsteps; i++)
         cl_footstep_sfx[i].num_sfx = -1;
-        cl_footstep_sfx[i].sfx = NULL;
-    }
-    
-    // load reserved footsteps
-    CL_RegisterFootstep("default", "step", &cl_footstep_sfx[FOOTSTEP_ID_DEFAULT]);
-    CL_RegisterFootstep("ladder", "ladder", &cl_footstep_sfx[FOOTSTEP_ID_LADDER]);
-    
-    // load the rest
-    for (int i = 0; i < cl.bsp->numtexinfo; i++) {
-        const mtexinfo_t *texinfo = &cl.bsp->texinfo[i];
 
-        if (cl_footstep_sfx[texinfo->step_id].num_sfx == -1) {
-            CL_RegisterFootstep(texinfo->c.material, texinfo->c.material, &cl_footstep_sfx[texinfo->step_id]);
-        }
+    // load reserved footsteps
+    CL_RegisterFootstep(&cl_footstep_sfx[FOOTSTEP_ID_DEFAULT], NULL);
+    CL_RegisterFootstep(&cl_footstep_sfx[FOOTSTEP_ID_LADDER], "ladder");
+
+    // load the rest
+    for (i = 0, tex = cl.bsp->texinfo; i < cl.bsp->numtexinfo; i++, tex++) {
+        cl_footstep_sfx_t *sfx = &cl_footstep_sfx[tex->step_id];
+        if (sfx->num_sfx == -1)
+            CL_RegisterFootstep(sfx, tex->material);
     }
 }
 

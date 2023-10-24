@@ -68,6 +68,7 @@ client_src = [
   'src/server/init.c',
   'src/server/main.c',
   'src/server/send.c',
+  'src/server/nav.c',
   'src/server/user.c',
   'src/server/world.c',
   'src/shared/base85.c',
@@ -232,6 +233,7 @@ if cc.get_argument_syntax() == 'gcc'
   test_args = [
     '-fsigned-char',
     '-fms-extensions',
+    '-fno-math-errno',
     '-Wno-microsoft-anon-tag',
     '-Wno-tautological-constant-out-of-range-compare',
     '-Wpointer-arith',

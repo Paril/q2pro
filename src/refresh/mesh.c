@@ -32,8 +32,8 @@ static vec_t    shellscale;
 static tessfunc_t tessfunc;
 static vec4_t   color;
 
-static const vec_t  *shadelight;
-static vec3_t       shadedir;
+static vec3_t   shadedir;
+static bool     dotshading;
 
 static float    celscale;
 
@@ -48,7 +48,7 @@ static void setup_dotshading(void)
     float cp, cy, sp, sy;
     vec_t yaw;
 
-    shadelight = NULL;
+    dotshading = false;
 
     if (!gl_dotshading->integer)
         return;
@@ -56,7 +56,7 @@ static void setup_dotshading(void)
     if (glr.ent->flags & RF_SHELL_MASK)
         return;
 
-    shadelight = color;
+    dotshading = true;
 
     // matches the anormtab.h precalculations
     yaw = -DEG2RAD(glr.ent->angles[YAW]);
@@ -128,10 +128,10 @@ static void tess_static_shade(const maliasmesh_t *mesh)
         dst_vert[0] = src_vert->pos[0] * newscale[0] + translate[0];
         dst_vert[1] = src_vert->pos[1] * newscale[1] + translate[1];
         dst_vert[2] = src_vert->pos[2] * newscale[2] + translate[2];
-        dst_vert[4] = shadelight[0] * d;
-        dst_vert[5] = shadelight[1] * d;
-        dst_vert[6] = shadelight[2] * d;
-        dst_vert[7] = shadelight[3];
+        dst_vert[4] = color[0] * d;
+        dst_vert[5] = color[1] * d;
+        dst_vert[6] = color[2] * d;
+        dst_vert[7] = color[3];
         dst_vert += VERTEX_SIZE;
 
         src_vert++;
@@ -220,10 +220,10 @@ static void tess_lerped_shade(const maliasmesh_t *mesh)
         dst_vert[2] =
             src_oldvert->pos[2] * oldscale[2] +
             src_newvert->pos[2] * newscale[2] + translate[2];
-        dst_vert[4] = shadelight[0] * d;
-        dst_vert[5] = shadelight[1] * d;
-        dst_vert[6] = shadelight[2] * d;
-        dst_vert[7] = shadelight[3];
+        dst_vert[4] = color[0] * d;
+        dst_vert[5] = color[1] * d;
+        dst_vert[6] = color[2] * d;
+        dst_vert[7] = color[3];
         dst_vert += VERTEX_SIZE;
 
         src_oldvert++;
@@ -562,7 +562,7 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
     // fall back to entity matrix
     GL_LoadMatrix(glr.entmatrix);
 
-    if (shadelight)
+    if (dotshading)
         state |= GLS_SHADE_SMOOTH;
 
     if (glr.ent->flags & RF_TRANSLUCENT)
@@ -585,7 +585,7 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
     (*tessfunc)(mesh);
     c.trisDrawn += mesh->numtris;
 
-    if (shadelight) {
+    if (dotshading) {
         GL_ArrayBits(GLA_VERTEX | GLA_TC | GLA_COLOR);
         GL_VertexPointer(3, VERTEX_SIZE, tess.vertices);
         GL_ColorFloatPointer(4, VERTEX_SIZE, tess.vertices + 4);
@@ -618,8 +618,11 @@ static void draw_alias_mesh(const maliasmesh_t *mesh)
 
 // for the given vertex, set of weights & skeleton, calculate
 // the output vertex (and optionally normal).
-static void calculate_vertex_for_skeleton(const md5_vertex_t *vert, const md5_weight_t *weights,
-                                          const md5_joint_t *skeleton, vec3_t out_position, vec3_t out_normal)
+static inline void calc_skel_vert(const md5_vertex_t *vert,
+                                  const md5_weight_t *weights,
+                                  const md5_joint_t *skeleton,
+                                  float *restrict out_position,
+                                  float *restrict out_normal)
 {
     VectorClear(out_position);
 
@@ -648,31 +651,25 @@ static void calculate_vertex_for_skeleton(const md5_vertex_t *vert, const md5_we
 
 static void tess_plain_skel(const md5_mesh_t *mesh, const md5_joint_t *skeleton)
 {
-    for (int i = 0; i < mesh->num_verts; i++) {
-        vec3_t position;
-        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, NULL);
-
-        tess.vertices[(i * 4) + 0] = position[0];
-        tess.vertices[(i * 4) + 1] = position[1];
-        tess.vertices[(i * 4) + 2] = position[2];
-    }
+    for (int i = 0; i < mesh->num_verts; i++)
+        calc_skel_vert(&mesh->vertices[i], mesh->weights, skeleton, &tess.vertices[i * 4], NULL);
 }
 
 static void tess_shade_skel(const md5_mesh_t *mesh, const md5_joint_t *skeleton)
 {
-    for (int i = 0; i < mesh->num_verts; i++) {
-        vec3_t position, normal;
-        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, normal);
+    vec_t *dst_vert = tess.vertices;
 
-        tess.vertices[(i * VERTEX_SIZE) + 0] = position[0];
-        tess.vertices[(i * VERTEX_SIZE) + 1] = position[1];
-        tess.vertices[(i * VERTEX_SIZE) + 2] = position[2];
+    for (int i = 0; i < mesh->num_verts; i++) {
+        vec3_t normal;
+        calc_skel_vert(&mesh->vertices[i], mesh->weights, skeleton, dst_vert, normal);
 
         vec_t d = shadedot(normal);
-        tess.vertices[(i * VERTEX_SIZE) + 4] = shadelight[0] * d;
-        tess.vertices[(i * VERTEX_SIZE) + 5] = shadelight[1] * d;
-        tess.vertices[(i * VERTEX_SIZE) + 6] = shadelight[2] * d;
-        tess.vertices[(i * VERTEX_SIZE) + 7] = shadelight[3];
+        dst_vert[4] = color[0] * d;
+        dst_vert[5] = color[1] * d;
+        dst_vert[6] = color[2] * d;
+        dst_vert[7] = color[3];
+
+        dst_vert += VERTEX_SIZE;
     }
 }
 
@@ -680,9 +677,9 @@ static void tess_shell_skel(const md5_mesh_t *mesh, const md5_joint_t *skeleton)
 {
     for (int i = 0; i < mesh->num_verts; i++) {
         vec3_t position, normal;
-        calculate_vertex_for_skeleton(&mesh->vertices[i], mesh->weights, skeleton, position, normal);
+        calc_skel_vert(&mesh->vertices[i], mesh->weights, skeleton, position, normal);
 
-        VectorMA(position, shellscale, normal, &tess.vertices[(i * 4) + 0]);
+        VectorMA(position, shellscale, normal, &tess.vertices[i * 4]);
     }
 }
 
@@ -710,7 +707,7 @@ static void draw_skeleton_mesh(const md5_model_t *model, const md5_mesh_t *mesh,
     // fall back to entity matrix
     GL_LoadMatrix(glr.entmatrix);
 
-    if (shadelight)
+    if (dotshading)
         state |= GLS_SHADE_SMOOTH;
 
     if (glr.ent->flags & RF_TRANSLUCENT)
@@ -732,14 +729,14 @@ static void draw_skeleton_mesh(const md5_model_t *model, const md5_mesh_t *mesh,
 
     if (glr.ent->flags & RF_SHELL_MASK)
         tess_shell_skel(mesh, skel);
-    else if (shadelight)
+    else if (dotshading)
         tess_shade_skel(mesh, skel);
     else
         tess_plain_skel(mesh, skel);
 
     c.trisDrawn += mesh->num_indices / 3;
 
-    if (shadelight) {
+    if (dotshading) {
         GL_ArrayBits(GLA_VERTEX | GLA_TC | GLA_COLOR);
         GL_VertexPointer(3, VERTEX_SIZE, tess.vertices);
         GL_ColorFloatPointer(4, VERTEX_SIZE, tess.vertices + 4);
@@ -861,7 +858,7 @@ void GL_DrawAliasModel(const model_t *model)
             WEAPONSHELL_SCALE : POWERSUIT_SCALE;
         tessfunc = newframenum == oldframenum ?
             tess_static_shell : tess_lerped_shell;
-    } else if (shadelight) {
+    } else if (dotshading) {
         tessfunc = newframenum == oldframenum ?
             tess_static_shade : tess_lerped_shade;
     } else {

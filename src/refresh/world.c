@@ -331,8 +331,6 @@ void GL_LightPoint(const vec3_t origin, vec3_t color)
 
 void R_LightPoint(const vec3_t origin, vec3_t color)
 {
-    int i;
-
     GL_LightPoint(origin, color);
 }
 

@@ -202,6 +202,116 @@ struct edict
 edict[num_edicts] edicts
 */
 
+struct {
+    int16_t     start, end;
+
+    int16_t     open_set[1024];
+
+    int16_t     came_from[1024];
+    float       g_score[1024], f_score[1024];
+} nav_ctx;
+
+static float Nav_Heuristic(int16_t n)
+{
+    vec3_t v;
+    VectorSubtract(nav_data.nodes[nav_ctx.end].origin, nav_data.nodes[n].origin, v);
+    return VectorLengthSquared(v);
+}
+
+static float Nav_Weight(int16_t a, int16_t b)
+{
+    vec3_t v;
+    VectorSubtract(nav_data.nodes[a].origin, nav_data.nodes[b].origin, v);
+    return VectorLengthSquared(v);
+}
+
+static int16_t ClosestNodeTo(const vec3_t p)
+{
+    float w = INFINITY;
+    int c = -1;
+
+    for (int i = 0; i < nav_data.num_nodes; i++) {
+        vec3_t v;
+        VectorSubtract(nav_data.nodes[i].origin, p, v);
+        float l = VectorLengthSquared(v);
+
+        if (l < w) {
+            w = l;
+            c = i;
+        }
+    }
+
+    return c;
+}
+
+static bool Nav_Path(void)
+{
+    memset(&nav_ctx.open_set, 0xFF, sizeof(nav_ctx.open_set));
+
+    for (int i = 0; i < 1024; i++) {
+        nav_ctx.g_score[i] = nav_ctx.f_score[i] = INFINITY;
+    }
+    
+    nav_ctx.open_set[0] = nav_ctx.start;
+    nav_ctx.came_from[nav_ctx.start] = -1;
+    nav_ctx.g_score[nav_ctx.start] = 0;
+    nav_ctx.f_score[nav_ctx.start] = Nav_Heuristic(nav_ctx.start);
+
+    while (true) {
+        int16_t current_id = -1;
+
+        for (int i = 0; i < 1024; i++) {
+            if (nav_ctx.open_set[i] == -1) {
+                continue;
+            } else if (current_id == -1) {
+                current_id = i;
+            } else if (nav_ctx.f_score[nav_ctx.open_set[i]] < nav_ctx.f_score[nav_ctx.open_set[current_id]]) {
+                current_id = i;
+            }
+        }
+
+        if (current_id == -1)
+            break;
+
+        int16_t current = nav_ctx.open_set[current_id];
+
+        if (current == nav_ctx.end)
+            return true;
+
+        nav_ctx.open_set[current_id] = -1;
+
+        for (int l = nav_data.nodes[current].first_link; l < nav_data.nodes[current].first_link + nav_data.nodes[current].num_links; l++) {
+            nav_link_t *link = &nav_data.links[l];
+
+            float temp_g_score = nav_ctx.g_score[current] + Nav_Weight(current, link->target);
+
+            if (temp_g_score >= nav_ctx.g_score[link->target])
+                continue;
+
+            nav_ctx.came_from[link->target] = current;
+            nav_ctx.g_score[link->target] = temp_g_score;
+            nav_ctx.f_score[link->target] = temp_g_score + Nav_Heuristic(link->target);
+
+            int i;
+
+            for (i = 0; i < 1024; i++) {
+                if (nav_ctx.open_set[i] == link->target)
+                    break;
+            }
+
+            if (i == 1024) {
+                for (i = 0; i < 1024; i++) {
+                    if (nav_ctx.open_set[i] == -1) {
+                        nav_ctx.open_set[i] = link->target;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
 
 void Nav_Load(const char *map_name)
 {
@@ -298,9 +408,6 @@ void Nav_Load(const char *map_name)
 
         for (int l = node->first_link; l < node->first_link + node->num_links; l++) {
             nav_link_t *link = &nav_data.links[l];
-
-            Q_assert(link->target >= 0);
-            
             Q_SetBit(bits, link->target);
         }
     }
@@ -342,6 +449,26 @@ static void Nav_Debug(void)
     if (!nav_debug->integer) {
         return;
     }
+    
+    int closest = ClosestNodeTo(glr.fd.vieworg);
+    int closest_org = ClosestNodeTo(vec3_origin);
+    
+    nav_ctx.start = closest;
+    nav_ctx.end = closest_org;
+
+    if (nav_ctx.start != nav_ctx.end && Nav_Path()) {
+        int16_t n = nav_ctx.end;
+
+        while (true) {
+            int16_t to = n;
+            n = nav_ctx.came_from[n];
+
+            if (n == -1)
+                break;
+
+            R_AddDebugLine(nav_data.nodes[to].origin, nav_data.nodes[n].origin, ColorFromU32A(U32_RED, 255), SV_FRAMETIME, true);
+        }
+    }
 
     for (int i = 0; i < nav_data.num_nodes; i++) {
         float len;
@@ -356,6 +483,11 @@ static void Nav_Debug(void)
         uint8_t alpha = constclamp((1.0f - ((len - 32.f) / (nav_debug_range->value - 32.f))), 0.0f, 1.0f) * 255.f;
 
         R_AddDebugCircle(nav_data.nodes[i].origin, nav_data.nodes[i].radius, ColorFromU32A(U32_CYAN, alpha), SV_FRAMETIME, true);
+        
+        if (i == nav_ctx.start)
+            R_AddDebugSphere(nav_data.nodes[i].origin, 32, ColorFromU32A(U32_BLUE, alpha), SV_FRAMETIME, true);
+        else if (i == nav_ctx.end)
+            R_AddDebugSphere(nav_data.nodes[i].origin, 32, ColorFromU32A(U32_RED, alpha), SV_FRAMETIME, true);
 
         vec3_t mins = { -16, -16, -24 }, maxs = { 16, 16, 32 };
 

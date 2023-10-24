@@ -31,18 +31,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define VIS_FAST_LONGS(bsp) \
     (((bsp)->visrowsize + sizeof(size_t) - 1) / sizeof(size_t))
 
-// footstep IDs that are fixed (fallback step sounds
-// and EV_LADDER step sounds)
-#define FOOTSTEP_RESERVED_COUNT     2
-#define FOOTSTEP_ID_DEFAULT         0
-#define FOOTSTEP_ID_LADDER          1
+#if USE_CLIENT
+
+enum {
+    FOOTSTEP_ID_DEFAULT,
+    FOOTSTEP_ID_LADDER,
+    FOOTSTEP_RESERVED_COUNT
+};
+
+#endif
 
 typedef struct mtexinfo_s {  // used internally due to name len probs //ZOID
     csurface_t          c;
     char                name[MAX_TEXNAME];
-
-    // footstep ID; will be identical for matching c.materials.
-    int                 step_id;
 
 #if USE_REF
     vec3_t              axis[2];
@@ -50,6 +51,10 @@ typedef struct mtexinfo_s {  // used internally due to name len probs //ZOID
     struct image_s      *image; // used for texturing
     int                 numframes;
     struct mtexinfo_s   *next; // used for animation
+#endif
+#if USE_CLIENT
+    char                material[16];
+    int                 step_id;
 #endif
 } mtexinfo_t;
 
@@ -84,7 +89,9 @@ typedef struct mface_s {
 
     byte            *lightmap;
     byte            styles[MAX_LIGHTMAPS];
-    int             numstyles;
+    byte            numstyles;
+
+    byte            hash;
 
     mtexinfo_t      *texinfo;
     vec3_t          lm_axis[2];
@@ -306,6 +313,10 @@ typedef struct bsp_s {
 int BSP_Load(const char *name, bsp_t **bsp_p);
 void BSP_Free(bsp_t *bsp);
 const char *BSP_ErrorString(int err);
+
+#if USE_CLIENT
+int BSP_LoadMaterials(bsp_t *bsp);
+#endif
 
 #if USE_REF
 typedef struct {

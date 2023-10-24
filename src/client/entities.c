@@ -23,8 +23,6 @@ extern qhandle_t cl_mod_powerscreen;
 extern qhandle_t cl_mod_laser;
 extern qhandle_t cl_mod_dmspot;
 extern qhandle_t cl_img_flare;
-extern qhandle_t cl_sfx_footsteps[4];
-extern qhandle_t cl_sfx_laddersteps[5];
 
 /*
 =========================================================================
@@ -236,7 +234,7 @@ static void parse_entity_event(int number)
     case EV_FOOTSTEP:
         if (cl_footsteps->integer)
             CL_PlayFootstepSfx(-1, number, 1.0f, ATTN_NORM);
-       break;
+        break;
     case EV_OTHER_FOOTSTEP:
         if (cl.csr.extended && cl_footsteps->integer)
             CL_PlayFootstepSfx(-1, number, 0.5f, ATTN_IDLE);
@@ -381,7 +379,6 @@ A valid frame has been parsed.
 void CL_DeltaFrame(void)
 {
     centity_t           *ent;
-    entity_state_t      *state;
     int                 i, j;
     int                 framenum;
     int                 prevstate = cls.state;
@@ -406,15 +403,16 @@ void CL_DeltaFrame(void)
     ent = &cl_entities[cl.frame.clientNum + 1];
     Com_PlayerToEntityState(&cl.frame.ps, &ent->current);
 
+    // set current and prev, unpack solid, etc
     for (i = 0; i < cl.frame.numEntities; i++) {
         j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
-        state = &cl.entityStates[j];
+        parse_entity_update(&cl.entityStates[j]);
+    }
 
-        // set current and prev
-        parse_entity_update(state);
-
-        // fire events
-        parse_entity_event(state->number);
+    // fire events. due to footstep tracing this must be after updating entities.
+    for (i = 0; i < cl.frame.numEntities; i++) {
+        j = (cl.frame.firstEntity + i) & PARSE_ENTITIES_MASK;
+        parse_entity_event(cl.entityStates[j].number);
     }
 
     if (cls.demo.recording && !cls.demo.paused && !cls.demo.seeking && CL_FRAMESYNC) {
