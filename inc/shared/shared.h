@@ -588,9 +588,9 @@ static inline float LongToFloat(uint32_t l)
      (b)[2]=LittleFloat((a)[2]))
 
 #if USE_BGRA
-#define MakeColor(r, g, b, a)   MakeRawLong(b, g, r, a)
+#define MakeColor(r, g, b, a)   MakeRawLong((b), (g), (r), (a))
 #else
-#define MakeColor(r, g, b, a)   MakeRawLong(r, g, b, a)
+#define MakeColor(r, g, b, a)   MakeRawLong((r), (g), (b), (a))
 #endif
 
 //=============================================
