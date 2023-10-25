@@ -30,6 +30,7 @@ common_src = [
   'src/common/sizebuf.c',
   'src/common/utils.c',
   'src/common/zone.c',
+  'src/common/features.h',
   'src/shared/shared.c',
 
   'inc/shared/atomic.h',
@@ -105,8 +106,12 @@ client_src = [
   'src/client/screen.c',
   'src/client/sound/main.c',
   'src/client/sound/mem.c',
+  'src/client/sound/qal.h',
+  'src/client/sound/sound.h',
   'src/client/tent.c',
   'src/client/view.c',
+  'src/client/client.h',
+  'src/client/cgame_classic.h',
   'src/common/async.c',
   'src/common/gamedll.c',
   'src/server/commands.c',
@@ -120,8 +125,11 @@ client_src = [
   'src/server/nav.c',
   'src/server/user.c',
   'src/server/world.c',
+  'src/server/server.h',
   'src/shared/base85.c',
   'src/shared/m_flash.c',
+
+  'inc/server/server.h',
 
   'inc/client/client.h',
   'inc/client/input.h',
@@ -141,6 +149,7 @@ ui_src = [
   'src/client/ui/script.c',
   'src/client/ui/servers.c',
   'src/client/ui/ui.c',
+  'src/client/ui/ui.h',
 ]
 
 refresh_src = [
@@ -160,6 +169,10 @@ refresh_src = [
   'src/refresh/texture.c',
   'src/refresh/world.c',
   'src/refresh/debug.c',
+  'src/refresh/arbfp.h',
+  'src/refresh/gl.h',
+  'src/refresh/images.h',
+  'src/refresh/qgl.h',
 
   'inc/refresh/refresh.h',
 ]
@@ -178,6 +191,7 @@ server_src = [
   'src/server/user.c',
   'src/server/nav.c',
   'src/server/world.c',
+  'src/server/server.h',
   'src/shared/base85.c',
 
   'inc/server/server.h',
