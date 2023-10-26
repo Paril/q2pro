@@ -121,6 +121,7 @@ typedef struct {
     void (*play_channel)(channel_t *ch);
     void (*stop_channel)(channel_t *ch);
     void (*stop_all_sounds)(void);
+    void (*end_registration)(void);
 } sndapi_t;
 
 #if USE_SNDDMA
