@@ -121,6 +121,7 @@ typedef struct {
     unsigned        visframe;
     unsigned        drawframe;
     unsigned        dlightframe;
+    unsigned        rand_seed;
     int             viewcluster1;
     int             viewcluster2;
     cplane_t        frustumPlanes[4];

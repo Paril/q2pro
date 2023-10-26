@@ -153,17 +153,32 @@ void GL_DrawParticles(void)
     } while (total);
 }
 
-// optimized path for single beam
-static void GL_DrawBeamSegment(vec3_t start, vec3_t end, float length, vec3_t d3, color_t color, int *numverts, int *numindices)
+static void GL_DrawBeamSegment(const vec3_t start, const vec3_t end, color_t color, float width)
 {
-    if (*numverts + 4 > TESS_MAX_VERTICES ||
-        *numindices + 6 > TESS_MAX_INDICES) {
-        qglDrawElements(GL_TRIANGLES, *numindices,
+    vec3_t d1, d2, d3;
+    vec_t *dst_vert;
+    uint32_t *dst_color;
+    QGL_INDEX_TYPE *dst_indices;
+    vec_t length;
+
+    VectorSubtract(end, start, d1);
+    VectorSubtract(glr.fd.vieworg, start, d2);
+    CrossProduct(d1, d2, d3);
+    VectorNormalize(d3);
+    VectorScale(d3, width, d3);
+
+    length = VectorLength(d1);
+    if (length < 0.1f)
+        return;
+
+    if (q_unlikely(tess.numverts + 4 > TESS_MAX_VERTICES ||
+                   tess.numindices + 6 > TESS_MAX_INDICES)) {
+        qglDrawElements(GL_TRIANGLES, tess.numindices,
                         QGL_INDEX_ENUM, tess.indices);
-        *numverts = *numindices = 0;
+        tess.numverts = tess.numindices = 0;
     }
 
-    vec_t *dst_vert = tess.vertices + *numverts * 5;
+    dst_vert = tess.vertices + tess.numverts * 5;
     VectorAdd(start, d3, dst_vert);
     VectorSubtract(start, d3, dst_vert + 5);
     VectorSubtract(end, d3, dst_vert + 10);
@@ -174,37 +189,80 @@ static void GL_DrawBeamSegment(vec3_t start, vec3_t end, float length, vec3_t d3
     dst_vert[13] = 1; dst_vert[14] = length;
     dst_vert[18] = 0; dst_vert[19] = length;
 
-    uint32_t *dst_color = (uint32_t *)tess.colors + *numverts;
+    dst_color = (uint32_t *)tess.colors + tess.numverts;
     dst_color[0] = color.u32;
     dst_color[1] = color.u32;
     dst_color[2] = color.u32;
     dst_color[3] = color.u32;
 
-    QGL_INDEX_TYPE *dst_indices = tess.indices + *numindices;
-    dst_indices[0] = *numverts + 0;
-    dst_indices[1] = *numverts + 2;
-    dst_indices[2] = *numverts + 3;
-    dst_indices[3] = *numverts + 0;
-    dst_indices[4] = *numverts + 1;
-    dst_indices[5] = *numverts + 2;
+    dst_indices = tess.indices + tess.numindices;
+    dst_indices[0] = tess.numverts + 0;
+    dst_indices[1] = tess.numverts + 2;
+    dst_indices[2] = tess.numverts + 3;
+    dst_indices[3] = tess.numverts + 0;
+    dst_indices[4] = tess.numverts + 1;
+    dst_indices[5] = tess.numverts + 2;
 
-    *numverts += 4;
-    *numindices += 6;
+    tess.numverts += 4;
+    tess.numindices += 6;
 }
 
 #define MIN_LIGHTNING_SEGMENTS      3
 #define MAX_LIGHTNING_SEGMENTS      7
-#define MAX_FRAC_DIFF               ((1.0f / MAX_LIGHTNING_SEGMENTS) * 0.80f)
+#define MIN_SEGMENT_LENGTH          10
 
-/* all things serve the Beam */
+static uint32_t GL_rand(void)
+{
+    uint32_t x = glr.rand_seed;
+
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+
+    return glr.rand_seed = x;
+}
+
+static float GL_frand(void)
+{
+    return (int32_t)GL_rand() * 0x1p-32f + 0.5f;
+}
+
+static void GL_DrawLightningBeam(const vec3_t start, const vec3_t end, color_t color, float width)
+{
+    vec3_t d1, segments[MAX_LIGHTNING_SEGMENTS - 1];
+    vec_t length;
+    int i, num_segments = MIN_LIGHTNING_SEGMENTS + GL_rand() % (MAX_LIGHTNING_SEGMENTS - MIN_LIGHTNING_SEGMENTS);
+
+    VectorSubtract(end, start, d1);
+    length = VectorNormalize(d1);
+
+    num_segments = min(num_segments, (int)(length / MIN_SEGMENT_LENGTH));
+    if (num_segments <= 1) {
+        GL_DrawBeamSegment(start, end, color, width);
+        return;
+    }
+
+    for (i = 0; i < num_segments - 1; i++) {
+        int dir = GL_rand() % q_countof(bytedirs);
+        float dist = GL_frand() * 20;
+        float frac = (float)(i + 1) / num_segments;
+        VectorMA(start, frac * length, d1, segments[i]);
+        VectorMA(segments[i], dist, bytedirs[dir], segments[i]);
+    }
+
+    for (i = 0; i < num_segments; i++) {
+        const float *seg_start = (i == 0) ? start : segments[i - 1];
+        const float *seg_end = (i == num_segments - 1) ? end : segments[i];
+
+        GL_DrawBeamSegment(seg_start, seg_end, color, width);
+    }
+}
+
 void GL_DrawBeams(void)
 {
-    vec3_t d1, d2, d3;
     vec_t *start, *end;
     color_t color;
-    vec_t length;
-    int numverts;
-    int numindices;
+    float width;
     entity_t *ent;
     int i;
 
@@ -221,26 +279,13 @@ void GL_DrawBeams(void)
     GL_TexCoordPointer(2, 5, tess.vertices + 3);
     GL_ColorBytePointer(4, 0, tess.colors);
 
-    numverts = numindices = 0;
     for (i = 0, ent = glr.fd.entities; i < glr.fd.num_entities; i++, ent++) {
         if (!(ent->flags & RF_BEAM)) {
             continue;
         }
 
-        int num_segments = ((ent->flags & RF_BEAM_LIGHTNING) == RF_BEAM_LIGHTNING) ? (MIN_LIGHTNING_SEGMENTS + Q_rand_uniform(MAX_LIGHTNING_SEGMENTS - MIN_LIGHTNING_SEGMENTS)) : 1;
-
         start = ent->origin;
         end = ent->oldorigin;
-        VectorSubtract(end, start, d1);
-        VectorSubtract(glr.fd.vieworg, start, d2);
-        CrossProduct(d1, d2, d3);
-        VectorNormalize(d3);
-        length = ent->frame * 1.2f;
-        VectorScale(d3, length, d3);
-
-        length = VectorLength(d1);
-        if (length < 0.001f)
-            continue;
 
         if (ent->skinnum == -1) {
             color.u32 = ent->rgba.u32;
@@ -249,43 +294,18 @@ void GL_DrawBeams(void)
         }
         color.u8[3] *= ent->alpha;
 
-        if (num_segments == 1) {
-            GL_DrawBeamSegment(start, end, length, d3, color, &numverts, &numindices);
+        width = ent->frame * 1.2f;
+
+        if (ent->flags & RF_GLOW) {
+            GL_DrawLightningBeam(start, end, color, width);
         } else {
-            struct {
-                float   frac;
-                vec3_t  p;
-            } segments[MAX_LIGHTNING_SEGMENTS - 2];
-
-            VectorNormalize(d1);
-
-            for (int i = 0; i < MAX_LIGHTNING_SEGMENTS - 2; i++) {
-                float dist = 4.f + (crand() * 16.f);
-                byte dir = Q_rand_uniform(q_countof(bytedirs));
-                segments[i].frac = (float) (i + 1) / MAX_LIGHTNING_SEGMENTS;
-                segments[i].frac += (crand() * (MAX_FRAC_DIFF * 0.5f));
-                VectorMA(start, segments[i].frac * length, d1, segments[i].p);
-                VectorMA(segments[i].p, dist, bytedirs[dir], segments[i].p);
-            }
-
-            for (int i = 0; i < MAX_LIGHTNING_SEGMENTS - 1; i++) {
-                float *seg_start = (i == 0) ? start : segments[i - 1].p;
-                float *seg_end = (i == MAX_LIGHTNING_SEGMENTS - 2) ? end : segments[i].p;
-                
-                VectorSubtract(seg_end, seg_start, d1);
-                VectorSubtract(glr.fd.vieworg, seg_start, d2);
-                CrossProduct(d1, d2, d3);
-                VectorNormalize(d3);
-                length = ent->frame * 1.2f;
-                VectorScale(d3, length, d3);
-
-                GL_DrawBeamSegment(seg_start, seg_end, length, d3, color, &numverts, &numindices);
-            }
+            GL_DrawBeamSegment(start, end, color, width);
         }
     }
 
-    qglDrawElements(GL_TRIANGLES, numindices,
+    qglDrawElements(GL_TRIANGLES, tess.numindices,
                     QGL_INDEX_ENUM, tess.indices);
+    tess.numverts = tess.numindices = 0;
 }
 
 void GL_BindArrays(void)
