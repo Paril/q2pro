@@ -1179,6 +1179,9 @@ void SCR_RegisterMedia(void)
     scr.font_pic = R_RegisterFont(scr_font->string);
 
     scr_crosshair_changed(scr_crosshair);
+
+    if (cgame)
+        cgame->TouchPics();
 }
 
 static void scr_font_changed(cvar_t *self)
