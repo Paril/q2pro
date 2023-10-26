@@ -175,7 +175,7 @@ static inline int clip16(int v)
     ((ch)->entnum == -1 || (ch)->entnum == listener_entnum || (ch)->dist_mult == 0)
 
 #define S_IsUnderWater() \
-    (cls.state == ca_active && cl.frame.ps.rdflags & RDF_UNDERWATER && s_underwater->integer)
+    (cls.state == ca_active && (cl.frame.ps.rdflags | cl.predicted_rdflags) & RDF_UNDERWATER && s_underwater->integer)
 
 #define S_Malloc(x)     Z_TagMalloc(x, TAG_SOUND)
 #define S_CopyString(x) Z_TagCopyString(x, TAG_SOUND)
