@@ -188,7 +188,11 @@ bool QAL_Init(void)
         goto fail;
     }
 
-    context = qalcCreateContext(device, NULL);
+    ALCint attributes[4] = { 0 };
+    attributes[0] = ALC_HRTF_SOFT;
+    attributes[1] = ALC_FALSE;
+
+    context = qalcCreateContext(device, attributes);
     if (!context) {
         Com_SetLastError("alcCreateContext failed");
         goto fail;
