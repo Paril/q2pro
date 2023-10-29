@@ -1005,7 +1005,7 @@ void GL_LoadWorld(const char *name)
     // only supported in DECOUPLED_LM maps because vanilla maps have broken
     // lightofs for liquids/alphas. legacy renderer doesn't support lightmapped
     // liquids too.
-    if (bsp->lm_decoupled && gl_static.use_shaders) {
+    if ((bsp->lm_decoupled || bsp->classic_sky) && gl_static.use_shaders) {
         gl_static.nolm_mask = SURF_NOLM_MASK_REMASTER;
     }
 
