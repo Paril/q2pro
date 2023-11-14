@@ -200,60 +200,6 @@ server_src = [
   'inc/server/server.h',
 ]
 
-game_src = [
-  'src/game/g_ai.c',
-  'src/game/g_chase.c',
-  'src/game/g_cmds.c',
-  'src/game/g_combat.c',
-  'src/game/g_func.c',
-  'src/game/g_items.c',
-  'src/game/g_main.c',
-  'src/game/g_misc.c',
-  'src/game/g_monster.c',
-  'src/game/g_phys.c',
-  'src/game/g_ptrs.c',
-  'src/game/g_save.c',
-  'src/game/g_spawn.c',
-  'src/game/g_svcmds.c',
-  'src/game/g_target.c',
-  'src/game/g_trigger.c',
-  'src/game/g_turret.c',
-  'src/game/g_utils.c',
-  'src/game/g_weapon.c',
-  'src/game/m_actor.c',
-  'src/game/m_berserk.c',
-  'src/game/m_boss2.c',
-  'src/game/m_boss31.c',
-  'src/game/m_boss32.c',
-  'src/game/m_boss3.c',
-  'src/game/m_brain.c',
-  'src/game/m_chick.c',
-  'src/game/m_flipper.c',
-  'src/game/m_float.c',
-  'src/game/m_flyer.c',
-  'src/game/m_gladiator.c',
-  'src/game/m_gunner.c',
-  'src/game/m_hover.c',
-  'src/game/m_infantry.c',
-  'src/game/m_insane.c',
-  'src/game/m_medic.c',
-  'src/game/m_move.c',
-  'src/game/m_mutant.c',
-  'src/game/m_parasite.c',
-  'src/game/m_soldier.c',
-  'src/game/m_supertank.c',
-  'src/game/m_tank.c',
-  'src/game/p_client.c',
-  'src/game/p_hud.c',
-  'src/game/p_trail.c',
-  'src/game/p_view.c',
-  'src/game/p_weapon.c',
-  'src/shared/base85.c',
-  'src/shared/m_flash.c',
-  'src/shared/shared.c',
-  'src/common/pmove.c',
-]
-
 cc = meson.get_compiler('c')
 
 win32 = host_machine.system() == 'windows'
@@ -536,15 +482,16 @@ executable('q2proded', common_src, server_src,
   install:               system_wide,
 )
 
-shared_library('game' + cpu, game_src,
-  name_prefix:           '',
-  dependencies:          game_deps,
-  include_directories:   'inc',
-  gnu_symbol_visibility: 'hidden',
-  link_args:             dll_link_args,
-  install:               system_wide,
-  install_dir:           libdir / get_option('base-game'),
-  override_options:      get_option('game-build-options'),
+game_subproject = subproject('rerelease-game')
+game_dll = game_subproject.get_variable('game_dll')
+
+prog_copy_game_dll = find_program('copy-game-dll.py')
+custom_target(
+    'copy_game_dll',
+    build_by_default: true,
+    input : game_dll,
+    output: 'game_dll.stamp',
+    command : [prog_copy_game_dll, '@OUTPUT@', '@INPUT@', '@BUILD_ROOT@'],
 )
 
 config.set('REVISION',            meson.project_version().substring(1).split('~')[0].to_int())
