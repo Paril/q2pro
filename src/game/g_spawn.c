@@ -345,7 +345,7 @@ void ED_CallSpawn(edict_t *ent)
     int     i;
 
     if (!ent->classname) {
-        gi.Com_Print("ED_CallSpawn: NULL classname\n");
+        gi.dprintf("ED_CallSpawn: NULL classname\n");
         return;
     }
 
@@ -368,7 +368,7 @@ void ED_CallSpawn(edict_t *ent)
             return;
         }
     }
-    gi.Com_Print(va("%s doesn't have a spawn function\n", ent->classname));
+    gi.dprintf("%s doesn't have a spawn function\n", ent->classname);
 }
 
 /*
@@ -424,7 +424,7 @@ static bool ED_ParseField(const spawn_field_t *fields, const char *key, const ch
                 break;
             case F_VECTOR:
                 if (sscanf(value, "%f %f %f", &vec[0], &vec[1], &vec[2]) != 3) {
-                    gi.Com_Print(va("%s: couldn't parse '%s'\n", __func__, key));
+                    gi.dprintf("%s: couldn't parse '%s'\n", __func__, key);
                     VectorClear(vec);
                 }
                 ((float *)(b + f->ofs))[0] = vec[0];
@@ -477,15 +477,15 @@ void ED_ParseEdict(const char **data, edict_t *ent)
         if (key[0] == '}')
             break;
         if (!*data)
-            gi.Com_Error(va("%s: EOF without closing brace", __func__));
+            gi.error("%s: EOF without closing brace", __func__);
 
         // parse value
         value = COM_Parse(data);
         if (!*data)
-            gi.Com_Error(va("%s: EOF without closing brace", __func__));
+            gi.error("%s: EOF without closing brace", __func__);
 
         if (value[0] == '}')
-            gi.Com_Error(va("%s: closing brace without data", __func__));
+            gi.error("%s: closing brace without data", __func__);
 
         init = true;
 
@@ -496,7 +496,7 @@ void ED_ParseEdict(const char **data, edict_t *ent)
 
         if (!ED_ParseField(spawn_fields, key, value, (byte *)ent)) {
             if (!ED_ParseField(temp_fields, key, value, (byte *)&st)) {
-                gi.Com_Print(va("%s: %s is not a field\n", __func__, key));
+                gi.dprintf("%s: %s is not a field\n", __func__, key);
             }
         }
     }
@@ -551,7 +551,7 @@ void G_FindTeams(void)
         }
     }
 
-    gi.Com_Print(va("%i teams with %i entities\n", c, c2));
+    gi.dprintf("%i teams with %i entities\n", c, c2);
 }
 
 /*
@@ -599,7 +599,7 @@ void SpawnEntities(const char *mapname, const char *entities, const char *spawnp
         if (!entities)
             break;
         if (com_token[0] != '{')
-            gi.Com_Error(va("ED_LoadFromFile: found %s when expecting {", com_token));
+            gi.error("ED_LoadFromFile: found %s when expecting {", com_token);
 
         if (!ent)
             ent = g_edicts;
@@ -637,7 +637,7 @@ void SpawnEntities(const char *mapname, const char *entities, const char *spawnp
         ED_CallSpawn(ent);
     }
 
-    gi.Com_Print(va("%i entities inhibited\n", inhibit));
+    gi.dprintf("%i entities inhibited\n", inhibit);
 
 #ifdef DEBUG
     i = 1;

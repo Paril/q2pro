@@ -340,7 +340,7 @@ void FoundTarget(edict_t *self)
     if (!self->movetarget) {
         self->goalentity = self->movetarget = self->enemy;
         HuntTarget(self);
-        gi.Com_Print(va("%s at %s, combattarget %s not found\n", self->classname, vtos(self->s.origin), self->combattarget));
+        gi.dprintf("%s at %s, combattarget %s not found\n", self->classname, vtos(self->s.origin), self->combattarget);
         return;
     }
 
@@ -485,7 +485,7 @@ bool FindTarget(edict_t *self)
             if (!visible(self, client))
                 return false;
         } else {
-            if (!gi.inPHS(self->s.origin, client->s.origin, true))
+            if (!gi.inPHS(self->s.origin, client->s.origin))
                 return false;
         }
 
