@@ -1019,7 +1019,11 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
     }
 
     if (pflags & PS_WEAPONFRAME) {
-        MSG_WriteByte(to->gunframe);
+        if(flags & MSG_PS_RERELEASE) {
+            MSG_WriteShort(to->gunframe);
+        } else {
+            MSG_WriteByte(to->gunframe);
+        }
         MSG_WriteChar(to->gunoffset[0]);
         MSG_WriteChar(to->gunoffset[1]);
         MSG_WriteChar(to->gunoffset[2]);
@@ -1284,8 +1288,13 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
             MSG_WriteByte(to->gunindex);
     }
 
-    if (pflags & PS_WEAPONFRAME)
-        MSG_WriteByte(to->gunframe);
+    if (pflags & PS_WEAPONFRAME) {
+        if(flags & MSG_PS_RERELEASE) {
+            MSG_WriteShort(to->gunframe);
+        } else {
+            MSG_WriteByte(to->gunframe);
+        }
+    }
 
     if (eflags & EPS_GUNOFFSET) {
         MSG_WriteChar(to->gunoffset[0]);
@@ -1518,8 +1527,13 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
             MSG_WriteByte(to->gunindex);
     }
 
-    if (pflags & PPS_WEAPONFRAME)
-        MSG_WriteByte(to->gunframe);
+    if (pflags & PPS_WEAPONFRAME) {
+        if(flags & MSG_PS_RERELEASE) {
+            MSG_WriteShort(to->gunframe);
+        } else {
+            MSG_WriteByte(to->gunframe);
+        }
+    }
 
     if (pflags & PPS_GUNOFFSET) {
         MSG_WriteChar(to->gunoffset[0]);
@@ -2159,7 +2173,10 @@ void MSG_ParseDeltaPlayerstate_Default(const player_state_t *from,
     }
 
     if (flags & PS_WEAPONFRAME) {
-        to->gunframe = MSG_ReadByte();
+        if (psflags & MSG_PS_EXTENSIONS)
+            to->gunframe = MSG_ReadWord();
+        else
+            to->gunframe = MSG_ReadByte();
         to->gunoffset[0] = MSG_ReadChar() * 0.25f;
         to->gunoffset[1] = MSG_ReadChar() * 0.25f;
         to->gunoffset[2] = MSG_ReadChar() * 0.25f;
@@ -2293,8 +2310,12 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
             to->gunindex = MSG_ReadByte();
     }
 
-    if (flags & PS_WEAPONFRAME)
-        to->gunframe = MSG_ReadByte();
+    if (flags & PS_WEAPONFRAME) {
+        if (psflags & MSG_PS_EXTENSIONS)
+            to->gunframe = MSG_ReadWord();
+        else
+            to->gunframe = MSG_ReadByte();
+    }
 
     if (extraflags & EPS_GUNOFFSET) {
         to->gunoffset[0] = MSG_ReadChar() * 0.25f;
@@ -2435,8 +2456,12 @@ void MSG_ParseDeltaPlayerstate_Packet(const player_state_t  *from,
             to->gunindex = MSG_ReadByte();
     }
 
-    if (flags & PPS_WEAPONFRAME)
-        to->gunframe = MSG_ReadByte();
+    if (flags & PPS_WEAPONFRAME) {
+        if (psflags & MSG_PS_EXTENSIONS)
+            to->gunframe = MSG_ReadWord();
+        else
+            to->gunframe = MSG_ReadByte();
+    }
 
     if (flags & PPS_GUNOFFSET) {
         to->gunoffset[0] = MSG_ReadChar() * 0.25f;
