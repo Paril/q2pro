@@ -856,6 +856,11 @@ static inline int BLEND2BYTE(float x)
     return clamp(v, 0, 255);
 }
 
+static inline int16_t scaled_short(float x, int scale)
+{
+    return constclamp(x * scale, -32768, 32767);
+}
+
 void MSG_PackPlayer(player_packed_t *out, const player_state_t *in)
 {
     int i;
@@ -863,7 +868,7 @@ void MSG_PackPlayer(player_packed_t *out, const player_state_t *in)
     out->pmove = in->pmove;
     for (i = 0; i < 3; i++) out->viewangles[i] = ANGLE2SHORT(in->viewangles[i]);
     for (i = 0; i < 3; i++) out->viewoffset[i] = OFFSET2CHAR(in->viewoffset[i]);
-    for (i = 0; i < 3; i++) out->kick_angles[i] = OFFSET2CHAR(in->kick_angles[i]);
+    for (i = 0; i < 3; i++) out->kick_angles[i] = scaled_short(in->kick_angles[i], 1024);
     for (i = 0; i < 3; i++) out->gunoffset[i] = OFFSET2CHAR(in->gunoffset[i]);
     for (i = 0; i < 3; i++) out->gunangles[i] = OFFSET2CHAR(in->gunangles[i]);
     out->gunindex = in->gunindex;
@@ -1006,9 +1011,16 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
     }
 
     if (pflags & PS_KICKANGLES) {
-        MSG_WriteChar(to->kick_angles[0]);
-        MSG_WriteChar(to->kick_angles[1]);
-        MSG_WriteChar(to->kick_angles[2]);
+        if (flags & MSG_PS_EXTENSIONS) {
+            MSG_WriteShort(to->kick_angles[0]);
+            MSG_WriteShort(to->kick_angles[1]);
+            MSG_WriteShort(to->kick_angles[2]);
+        } else {
+            // Convert kickangles from 'angle * 1024' to 'angle * 4'
+            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+        }
     }
 
     if (pflags & PS_WEAPONINDEX) {
@@ -1276,9 +1288,16 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
         MSG_WriteShort(to->viewangles[2]);
 
     if (pflags & PS_KICKANGLES) {
-        MSG_WriteChar(to->kick_angles[0]);
-        MSG_WriteChar(to->kick_angles[1]);
-        MSG_WriteChar(to->kick_angles[2]);
+        if (flags & MSG_PS_EXTENSIONS) {
+            MSG_WriteShort(to->kick_angles[0]);
+            MSG_WriteShort(to->kick_angles[1]);
+            MSG_WriteShort(to->kick_angles[2]);
+        } else {
+            // Convert kickangles from 'angle * 1024' to 'angle * 4'
+            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+        }
     }
 
     if (pflags & PS_WEAPONINDEX) {
@@ -1515,9 +1534,16 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
         MSG_WriteShort(to->viewangles[2]);
 
     if (pflags & PPS_KICKANGLES) {
-        MSG_WriteChar(to->kick_angles[0]);
-        MSG_WriteChar(to->kick_angles[1]);
-        MSG_WriteChar(to->kick_angles[2]);
+        if (flags & MSG_PS_EXTENSIONS) {
+            MSG_WriteShort(to->kick_angles[0]);
+            MSG_WriteShort(to->kick_angles[1]);
+            MSG_WriteShort(to->kick_angles[2]);
+        } else {
+            // Convert kickangles from 'angle * 1024' to 'angle * 4'
+            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
+            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+        }
     }
 
     if (pflags & PPS_WEAPONINDEX) {
@@ -2160,9 +2186,15 @@ void MSG_ParseDeltaPlayerstate_Default(const player_state_t *from,
     }
 
     if (flags & PS_KICKANGLES) {
-        to->kick_angles[0] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[1] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        if (psflags & MSG_PS_EXTENSIONS) {
+            to->kick_angles[0] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[1] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[2] = MSG_ReadShort() / 1024.f;
+        } else {
+            to->kick_angles[0] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[1] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        }
     }
 
     if (flags & PS_WEAPONINDEX) {
@@ -2298,9 +2330,15 @@ void MSG_ParseDeltaPlayerstate_Enhanced(const player_state_t    *from,
         to->viewangles[2] = MSG_ReadAngle16();
 
     if (flags & PS_KICKANGLES) {
-        to->kick_angles[0] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[1] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        if (psflags & MSG_PS_EXTENSIONS) {
+            to->kick_angles[0] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[1] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[2] = MSG_ReadShort() / 1024.f;
+        } else {
+            to->kick_angles[0] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[1] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        }
     }
 
     if (flags & PS_WEAPONINDEX) {
@@ -2444,9 +2482,15 @@ void MSG_ParseDeltaPlayerstate_Packet(const player_state_t  *from,
         to->viewangles[2] = MSG_ReadAngle16();
 
     if (flags & PPS_KICKANGLES) {
-        to->kick_angles[0] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[1] = MSG_ReadChar() * 0.25f;
-        to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        if (psflags & MSG_PS_EXTENSIONS) {
+            to->kick_angles[0] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[1] = MSG_ReadShort() / 1024.f;
+            to->kick_angles[2] = MSG_ReadShort() / 1024.f;
+        } else {
+            to->kick_angles[0] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[1] = MSG_ReadChar() * 0.25f;
+            to->kick_angles[2] = MSG_ReadChar() * 0.25f;
+        }
     }
 
     if (flags & PPS_WEAPONINDEX) {
