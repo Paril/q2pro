@@ -861,14 +861,19 @@ static inline int16_t scaled_short(float x, int scale)
     return constclamp(x * scale, -32768, 32767);
 }
 
-void MSG_PackPlayer(player_packed_t *out, const player_state_t *in)
+void MSG_PackPlayer(player_packed_t *out, const player_state_t *in, msgPsFlags_t flags)
 {
     int i;
 
     out->pmove = in->pmove;
     for (i = 0; i < 3; i++) out->viewangles[i] = ANGLE2SHORT(in->viewangles[i]);
-    for (i = 0; i < 3; i++) out->viewoffset[i] = scaled_short(in->viewoffset[i], 16);
-    for (i = 0; i < 3; i++) out->kick_angles[i] = scaled_short(in->kick_angles[i], 1024);
+    if (flags & MSG_PS_RERELEASE) {
+        for (i = 0; i < 3; i++) out->viewoffset[i] = scaled_short(in->viewoffset[i], 16);
+        for (i = 0; i < 3; i++) out->kick_angles[i] = scaled_short(in->kick_angles[i], 1024);
+    } else {
+        for (i = 0; i < 3; i++) out->viewoffset[i] = OFFSET2CHAR(in->viewoffset[i]);
+        for (i = 0; i < 3; i++) out->kick_angles[i] = OFFSET2CHAR(in->kick_angles[i]);
+    }
     for (i = 0; i < 3; i++) out->gunoffset[i] = OFFSET2CHAR(in->gunoffset[i]);
     for (i = 0; i < 3; i++) out->gunangles[i] = OFFSET2CHAR(in->gunangles[i]);
     out->gunindex = in->gunindex;
@@ -1004,10 +1009,9 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
             MSG_WriteShort(to->viewoffset[1]);
             MSG_WriteShort(to->viewoffset[2]);
         } else {
-            // Convert viewoffset from 'offset * 16' to 'offset * 4'
-            MSG_WriteChar(constclamp(to->viewoffset[0] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[1] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[2] >> 2, -128, 127));
+            MSG_WriteChar(to->viewoffset[0]);
+            MSG_WriteChar(to->viewoffset[1]);
+            MSG_WriteChar(to->viewoffset[2]);
         }
     }
 
@@ -1023,10 +1027,9 @@ void MSG_WriteDeltaPlayerstate_Default(const player_packed_t *from, const player
             MSG_WriteShort(to->kick_angles[1]);
             MSG_WriteShort(to->kick_angles[2]);
         } else {
-            // Convert kickangles from 'angle * 1024' to 'angle * 4'
-            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+            MSG_WriteChar(to->kick_angles[0]);
+            MSG_WriteChar(to->kick_angles[1]);
+            MSG_WriteChar(to->kick_angles[2]);
         }
     }
 
@@ -1286,10 +1289,9 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
             MSG_WriteShort(to->viewoffset[1]);
             MSG_WriteShort(to->viewoffset[2]);
         } else {
-            // Convert viewoffset from 'offset * 16' to 'offset * 4'
-            MSG_WriteChar(constclamp(to->viewoffset[0] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[1] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[2] >> 2, -128, 127));
+            MSG_WriteChar(to->viewoffset[0]);
+            MSG_WriteChar(to->viewoffset[1]);
+            MSG_WriteChar(to->viewoffset[2]);
         }
     }
 
@@ -1307,10 +1309,9 @@ int MSG_WriteDeltaPlayerstate_Enhanced(const player_packed_t    *from,
             MSG_WriteShort(to->kick_angles[1]);
             MSG_WriteShort(to->kick_angles[2]);
         } else {
-            // Convert kickangles from 'angle * 1024' to 'angle * 4'
-            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+            MSG_WriteChar(to->kick_angles[0]);
+            MSG_WriteChar(to->kick_angles[1]);
+            MSG_WriteChar(to->kick_angles[2]);
         }
     }
 
@@ -1539,10 +1540,9 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
             MSG_WriteShort(to->viewoffset[1]);
             MSG_WriteShort(to->viewoffset[2]);
         } else {
-            // Convert viewoffset from 'offset * 16' to 'offset * 4'
-            MSG_WriteChar(constclamp(to->viewoffset[0] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[1] >> 2, -128, 127));
-            MSG_WriteChar(constclamp(to->viewoffset[2] >> 2, -128, 127));
+            MSG_WriteChar(to->viewoffset[0]);
+            MSG_WriteChar(to->viewoffset[1]);
+            MSG_WriteChar(to->viewoffset[2]);
         }
     }
 
@@ -1560,10 +1560,9 @@ void MSG_WriteDeltaPlayerstate_Packet(const player_packed_t *from,
             MSG_WriteShort(to->kick_angles[1]);
             MSG_WriteShort(to->kick_angles[2]);
         } else {
-            // Convert kickangles from 'angle * 1024' to 'angle * 4'
-            MSG_WriteChar(constclamp(to->kick_angles[0] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[1] >> 8, -128, 127));
-            MSG_WriteChar(constclamp(to->kick_angles[2] >> 8, -128, 127));
+            MSG_WriteChar(to->kick_angles[0]);
+            MSG_WriteChar(to->kick_angles[1]);
+            MSG_WriteChar(to->kick_angles[2]);
         }
     }
 
