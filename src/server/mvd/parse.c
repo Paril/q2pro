@@ -1069,9 +1069,8 @@ bool MVD_ParseMessage(mvd_t *mvd)
         }
 
         cmd = MSG_ReadByte();
-
-        if (cmd & 128)
-            extrabits = MSG_ReadByte();// PARIL TEMP
+        extrabits = cmd >> SVCMD_BITS;
+        cmd &= SVCMD_MASK;
 
         SHOWNET(1, "%3zu:%s\n", msg_read.readcount - 1, MVD_ServerCommandString(cmd));
 
