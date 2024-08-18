@@ -3782,50 +3782,60 @@ static void FS_FindBaseDir(void)
     // is empty by default which we should fix.
     //static const char *defgame = "baseq2";
 
-    // find Steam installation dir first
-    char client_dir[MAX_OSPATH];
-    
-    if (Sys_GetInstalledGamePath(GAME_PATH_STEAM, client_dir, sizeof(client_dir))) {
+    // Don't try to detect the base directory if it was already explicitly specified
+    bool detect_base_dir = !Cvar_Exists("basedir", false) && !Cvar_Exists("libdir", false);
 
-        // found Steam dir - see if the mode we want is available
-        listfiles_t list = {
-            .flags = FS_SEARCH_DIRSONLY,
-            .baselen = strlen(client_dir) + 1,
-        };
+    if (detect_base_dir) {
+        // find Steam installation dir first
+        char client_dir[MAX_OSPATH];
 
-        Sys_ListFiles_r(&list, client_dir, 0);
+        if (Sys_GetInstalledGamePath(GAME_PATH_STEAM, client_dir, sizeof(client_dir))) {
 
-        bool has_rerelease = false;
+            // found Steam dir - see if the mode we want is available
+            listfiles_t list = {
+                .flags = FS_SEARCH_DIRSONLY,
+                .baselen = strlen(client_dir) + 1,
+            };
 
-        for (int i = 0; i < list.count; i++) {
-            char *s = list.files[i];
+            Sys_ListFiles_r(&list, client_dir, 0);
 
-            if (!Q_stricmp(s, "rerelease")) {
-                has_rerelease = true;
+            bool has_rerelease = false;
+
+            for (int i = 0; i < list.count; i++) {
+                char *s = list.files[i];
+
+                if (!Q_stricmp(s, "rerelease")) {
+                    has_rerelease = true;
+                }
+
+                Z_Free(s);
             }
 
-            Z_Free(s);
+            Z_Free(list.files);
+
+            if (com_rerelease->integer == RERELEASE_MODE_YES && has_rerelease) {
+                Q_strlcat(client_dir, PATH_SEP_STRING "rerelease", sizeof(client_dir));
+            }
+        } else if (com_rerelease->integer == RERELEASE_MODE_YES && Sys_GetInstalledGamePath(GAME_PATH_GOG_RERELEASE, client_dir, sizeof(client_dir))) {
+            //
+        } else if (com_rerelease->integer == RERELEASE_MODE_NO && Sys_GetInstalledGamePath(GAME_PATH_GOG_CLASSIC, client_dir, sizeof(client_dir))) {
+            //
         }
 
-        Z_Free(list.files);
-
-        if (com_rerelease->integer == RERELEASE_MODE_YES && has_rerelease) {
-            Q_strlcat(client_dir, PATH_SEP_STRING "rerelease", sizeof(client_dir));
+        // Don't set an "empty" base dir, use defaults instead
+        if (*client_dir)
+        {
+            Cvar_Set("basedir", client_dir);
+            Cvar_Set("libdir", client_dir);
         }
-    } else if (com_rerelease->integer == RERELEASE_MODE_YES && Sys_GetInstalledGamePath(GAME_PATH_GOG_RERELEASE, client_dir, sizeof(client_dir))) {
-        // 
-    } else if (com_rerelease->integer == RERELEASE_MODE_NO && Sys_GetInstalledGamePath(GAME_PATH_GOG_CLASSIC, client_dir, sizeof(client_dir))) {
-        // 
     }
-
-    Cvar_Set("basedir", client_dir);
-    Cvar_Set("libdir", client_dir);
 
     // TODO: find a better home (lol) for me
 #ifdef _WIN32
     if (com_rerelease->integer == RERELEASE_MODE_YES) {
-        if (ExpandEnvironmentStringsA("%userprofile%\\Saved Games\\NightDive Studios\\Quake II", client_dir, sizeof(client_dir) - 2)) {
-            Cvar_Set("homedir", client_dir);
+        char homedir[MAX_OSPATH];
+        if (ExpandEnvironmentStringsA("%userprofile%\\Saved Games\\NightDive Studios\\Quake II", homedir, sizeof(homedir) - 2)) {
+            Cvar_Set("homedir", homedir);
         }
     }
 #endif
