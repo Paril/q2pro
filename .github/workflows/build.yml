@@ -29,7 +29,7 @@ env:
 
   MESON_ARGS_LINUX: >-
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp,avcodec
+    --force-fallback-for=fmt,jsoncpp,libavcodec,libavformat,libavutil,libswresample,libswscale
     -Dsdl2=enabled
     -Dwayland=enabled
     -Dx11=enabled
@@ -37,11 +37,11 @@ env:
   MESON_ARGS_MACOS: >-
     -Dpkg_config_path=/opt/homebrew/opt/openal-soft/lib/pkgconfig
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp,avcodec
+    --force-fallback-for=fmt,jsoncpp,libavcodec,libavformat,libavutil,libswresample,libswscale
 
   MESON_ARGS_FREEBSD: >-
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp,openal-soft,avcodec
+    --force-fallback-for=fmt,jsoncpp,openal-soft,libavcodec,libavformat,libavutil,libswresample,libswscale
 
 jobs:
   mingw:
