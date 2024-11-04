@@ -18,6 +18,7 @@ env:
     -Dlibjpeg=enabled
     -Dlibpng=enabled
     -Dopenal=enabled
+    -Dopenal-soft:werror=false
     -Dsoftware-sound=enabled
     -Dzlib=enabled
 
