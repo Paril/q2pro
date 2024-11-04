@@ -42,7 +42,7 @@ env:
 
   MESON_ARGS_FREEBSD: >-
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp
+    --force-fallback-for=fmt,jsoncpp,openal-soft
 
 jobs:
   mingw:
@@ -215,7 +215,7 @@ jobs:
           version: '14.1'
           run: |
             sudo pkg update
-            sudo pkg install -y git meson pkgconf openal-soft \
+            sudo pkg install -y git meson pkgconf \
             sdl2 curl png jpeg-turbo libx11 libdecor evdev-proto wayland-protocols
             meson setup ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_FREEBSD }} builddir
             meson configure builddir
