@@ -15,6 +15,7 @@ env:
     -Dtests=true
     -Dwerror=true
     -Davcodec=enabled
+    -Dffmpeg:werror=false
     -Dlibcurl=enabled
     -Dlibjpeg=enabled
     -Dlibpng=enabled
