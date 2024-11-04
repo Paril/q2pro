@@ -64,10 +64,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-mingw-w64 g++-mingw-w64 nasm meson ninja-build
 
-      - name: Build
+      - name: Build - meson setup
         run: |
           meson setup --cross-file=.ci/${{ matrix.arch }}-w64-mingw32.txt \
-          ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_WIN }} builddir
+            ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_WIN }} builddir
+
+      - name: Build info - meson configure
+        run: |
+          meson configure builddir
+
+      - name: Build - meson compile
+        run: |
           meson compile -C builddir
 
   msvc:
@@ -94,9 +101,16 @@ jobs:
       - name: Install dependencies
         run: pip3 install --no-input meson ninja
 
-      - name: Build
+      - name: Build - meson setup
         run: |
           meson setup ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_WIN }} builddir
+
+      - name: Build info - meson configure
+        run: |
+          meson configure builddir
+
+      - name: Build - meson compile
+        run: |
           meson compile -C builddir
           meson install -C builddir --tags runtime --destdir ${{ github.workspace }}/installdir
 
@@ -133,14 +147,21 @@ jobs:
           libcurl4-gnutls-dev libx11-dev libxi-dev \
           libwayland-dev wayland-protocols libdecor-0-dev
 
-      - name: Build
+      - name: Build - meson setup
         run: |
           meson setup ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_LINUX }} builddir
-          meson compile -C builddir
-          meson install -C builddir --tags runtime --destdir ${{ github.workspace }}/installdir
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+
+      - name: Build info - meson configure
+        run: |
+          meson configure builddir
+
+      - name: Build - meson compile
+        run: |
+          meson compile -C builddir
+          meson install -C builddir --tags runtime --destdir ${{ github.workspace }}/installdir
 
       - name: Setup variables
         uses: actions/github-script@v7
@@ -165,9 +186,16 @@ jobs:
           brew update
           brew install meson sdl2 openal-soft libpng jpeg-turbo
 
-      - name: Build
+      - name: Build - meson setup
         run: |
           meson setup ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_MACOS }} builddir
+
+      - name: Build info - meson configure
+        run: |
+          meson configure builddir
+
+      - name: Build - meson compile
+        run: |
           meson compile -C builddir
 
   freebsd:
@@ -189,4 +217,5 @@ jobs:
             sudo pkg install -y git meson pkgconf openal-soft \
             sdl2 curl png jpeg-turbo libx11 libdecor evdev-proto wayland-protocols
             meson setup ${{ env.MESON_ARGS }} ${{ env.MESON_ARGS_FREEBSD }} builddir
+            meson configure builddir
             meson compile -C builddir
