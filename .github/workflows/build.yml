@@ -21,6 +21,7 @@ env:
     -Dwayland=disabled
     -Dwrap_mode=forcefallback
     -Dx11=disabled
+    -Dopenal-soft:alsa=disabled
 
   MESON_ARGS_LINUX: >-
     -Dwindows-crash-dumps=disabled
