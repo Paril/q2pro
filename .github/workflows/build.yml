@@ -7,9 +7,9 @@ on:
     branches: [rerelease-game]
 
 env:
+  # FIXME: Re-add '--fatal-meson-warnings' when meson fixed 'CMake Toolchain: Failed to determine CMake compilers state' w/ openal
   MESON_ARGS: >-
     --auto-features=enabled
-    --fatal-meson-warnings
     -Davcodec=disabled
     -Danticheat-server=true
     -Dpacketdup-hack=true
