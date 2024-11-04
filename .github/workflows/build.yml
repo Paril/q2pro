@@ -20,6 +20,7 @@ env:
     -Dopenal-soft:werror=false
     -Dsoftware-sound=enabled
     -Dzlib=enabled
+    -Dvideotoolbox=disabled
 
   MESON_ARGS_WIN: >-
     -Dicmp-errors=enabled
@@ -28,7 +29,7 @@ env:
 
   MESON_ARGS_LINUX: >-
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp
+    --force-fallback-for=fmt,jsoncpp,avcodec
     -Dsdl2=enabled
     -Dwayland=enabled
     -Dx11=enabled
@@ -37,11 +38,12 @@ env:
     -Dpkg_config_path=/opt/homebrew/opt/openal-soft/lib/pkgconfig
     -Dwrap_mode=nofallback
     -Dx11=disabled
-    --force-fallback-for=fmt,jsoncpp
+    --force-fallback-for=fmt,jsoncpp,avcodec
+    -Dvideotoolbox=enabled
 
   MESON_ARGS_FREEBSD: >-
     -Dwrap_mode=nofallback
-    --force-fallback-for=fmt,jsoncpp,openal-soft
+    --force-fallback-for=fmt,jsoncpp,openal-soft,avcodec
 
 jobs:
   mingw:
