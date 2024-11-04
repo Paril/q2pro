@@ -9,37 +9,37 @@ on:
 env:
   # FIXME: Re-add '--fatal-meson-warnings' when meson fixed 'CMake Toolchain: Failed to determine CMake compilers state' w/ openal
   MESON_ARGS: >-
-    --auto-features=enabled
     -Davcodec=disabled
     -Danticheat-server=true
     -Dpacketdup-hack=true
     -Dtests=true
     -Dwerror=true
+    -Dlibcurl=enabled
+    -Dlibjpeg=enabled
+    -Dlibpng=enabled
+    -Dopenal=enabled
+    -Dsoftware-sound=enabled
+    -Dzlib=enabled
 
   MESON_ARGS_WIN: >-
-    -Dsdl2=disabled
-    -Dwayland=disabled
+    -Dicmp-errors=enabled
     -Dwrap_mode=forcefallback
-    -Dx11=disabled
-    -Dopenal-soft:alsa=disabled
+    -Dwindows-crash-dumps=enabled
 
   MESON_ARGS_LINUX: >-
-    -Dwindows-crash-dumps=disabled
     -Dwrap_mode=nofallback
     --force-fallback-for=fmt,jsoncpp
+    -Dsdl2=enabled
+    -Dwayland=enabled
+    -Dx11=enabled
 
   MESON_ARGS_MACOS: >-
-    -Dicmp-errors=disabled
     -Dpkg_config_path=/opt/homebrew/opt/openal-soft/lib/pkgconfig
-    -Dwayland=disabled
-    -Dwindows-crash-dumps=disabled
     -Dwrap_mode=nofallback
     -Dx11=disabled
     --force-fallback-for=fmt,jsoncpp
 
   MESON_ARGS_FREEBSD: >-
-    -Dicmp-errors=disabled
-    -Dwindows-crash-dumps=disabled
     -Dwrap_mode=nofallback
     --force-fallback-for=fmt,jsoncpp
 
