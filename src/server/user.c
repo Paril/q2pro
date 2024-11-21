@@ -96,11 +96,13 @@ static void SV_CreateBaselines(void)
     }
 }
 
+// Data needed for write_gamestate. Too large for stack, so store statically.
+static q2proto_svc_configstring_t configstrings[MAX_CONFIGSTRINGS];
+static q2proto_svc_spawnbaseline_t spawnbaselines[MAX_EDICTS];
+
 static void write_gamestate(void)
 {
     msgEsFlags_t baseline_flags = sv_client->q2proto_ctx.features.has_beam_old_origin_fix ? MSG_ES_BEAMORIGIN : 0;
-    q2proto_svc_configstring_t configstrings[MAX_CONFIGSTRINGS];
-    q2proto_svc_spawnbaseline_t spawnbaselines[MAX_PACKET_ENTITIES];
     q2proto_gamestate_t gamestate = {.num_configstrings = 0, .configstrings = configstrings, .num_spawnbaselines = 0, .spawnbaselines = spawnbaselines};
     memset(spawnbaselines, 0, sizeof(spawnbaselines));
 
