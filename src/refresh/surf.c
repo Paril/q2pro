@@ -1076,7 +1076,7 @@ void GL_LoadWorld(const char *name)
             } else {
                 info->image = R_SKYTEXTURE;
             }
-        } else if (info->c.flags & SURF_NODRAW) {
+        } else if (info->c.flags & SURF_NODRAW && bsp->has_bspx) {
             info->image = R_NOTEXTURE;
         } else {
             imageflags_t flags = (info->c.flags & SURF_WARP) ? IF_TURBULENT : IF_NONE;
@@ -1100,8 +1100,14 @@ void GL_LoadWorld(const char *name)
                 continue;
             surf->drawflags &= ~SURF_NODRAW;
         }
-        if (surf->drawflags & SURF_NODRAW)
-            continue;
+
+        // ignore NODRAW bit in vanilla maps for compatibility
+        if (surf->drawflags & SURF_NODRAW) {
+            if (bsp->has_bspx)
+                continue;
+            surf->drawflags &= ~SURF_NODRAW;
+        }
+
         if (surf->drawflags & SURF_N64_UV)
             n64surfs++;
 
