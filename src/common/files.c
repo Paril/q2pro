@@ -3656,14 +3656,13 @@ static void free_game_paths(void)
 }
 
 // add builtin stuff
-static void add_builtin_content(void)
-{
+static void add_builtin_content(void) {
 #if USE_ZLIB
-    pack_t *pack;
-    searchpath_t *search;
+    pack_t *pack = load_builtin_file();
+    if (!pack)
+        return; // Prevent crash
 
-    pack = load_builtin_file();
-    search = FS_Malloc(sizeof(*search));
+    searchpath_t *search = FS_Malloc(sizeof(*search));
     search->mode = FS_PATH_BASE | FS_DIR_BASE;
     search->filename[0] = 0;
     search->pack = pack_get(pack);
