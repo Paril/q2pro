@@ -910,9 +910,67 @@ static void CL_CheckForIP(const char *s)
     }
 }
 
+/*
+ * Replace ##P<n> tokens with player names from configstrings.
+ * Per server game.c FIXME: "the client is supposed to translate ##P<n> to
+ * player names" (playerskins configstring format: "name\\skin\\dogtag").
+ */
+static void CL_TranslatePlayerNameTokens(char *s, size_t size)
+{
+    const char *src;
+    char *dst, out[MAX_STRING_CHARS];
+    int playernum, idx;
+    size_t space;
+
+    if (!size)
+        return;
+
+    /* Need valid connection for configstrings */
+    if (cls.state < ca_loading)
+        return;
+
+    src = s;
+    dst = out;
+    *out = 0;
+
+    while (*src) {
+        space = sizeof(out) - (size_t)(dst - out) - 1;
+        if (!space)
+            break;
+
+        if (src[0] == '#' && src[1] == '#' && src[2] == 'P' && Q_isdigit(src[3])) {
+            src += 3;
+            playernum = 0;
+            while (Q_isdigit(*src))
+                playernum = playernum * 10 + (*src++ - '0');
+
+            if (playernum < MAX_CLIENTS) {
+                idx = cl.csr.playerskins + playernum;
+                if ((unsigned)idx < cl.csr.end) {
+                    const char *cs = cl.configstrings[idx];
+                    const char *end = strchr(cs, '\\');
+                    size_t len = end ? (size_t)(end - cs) : strlen(cs);
+                    if (len > space)
+                        len = space;
+                    if (len > 0) {
+                        memcpy(dst, cs, len);
+                        dst += len;
+                    }
+                }
+            }
+            continue;
+        }
+        *dst++ = *src++;
+    }
+    *dst = '\0';
+    Q_strlcpy(s, out, size);
+}
+
 static void CL_HandlePrint(int level, char *s)
 {
     const char *fmt;
+
+    CL_TranslatePlayerNameTokens(s, MAX_STRING_CHARS);
 
     if (level != PRINT_CHAT) {
         if (cl.csr.extended) {
