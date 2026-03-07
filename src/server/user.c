@@ -1457,7 +1457,7 @@ void SV_ExecuteClientMessage(client_t *client)
 
         // Handle protocol errors from q2proto
         if (err != Q2P_ERR_SUCCESS) {
-            SV_DropClient(client, "bad client message");
+            SV_DropClient(client, va("bad client message (%s)", q2proto_error_string(err)));
             break;
         }
 
