@@ -913,38 +913,30 @@ static void CL_CheckForIP(const char *s)
 /*
  * Replace ##P<n> tokens with player names from cl.clientinfo.
  * Per server game.c: "the client is supposed to translate ##P<n> to
- * player names". Only occurs for broadcast prints.
+ * player names".
  */
 static void CL_TranslatePlayerNameTokens(char *s, size_t size)
 {
-    const char *src;
-    char *dst, out[MAX_STRING_CHARS];
-    int playernum;
-    size_t space;
-
-    src = s;
-    dst = out;
+    char out[MAX_STRING_CHARS];
+    const char *src = s;
+    char *dst = out;
 
     while (*src) {
-        space = sizeof(out) - (size_t)(dst - out) - 1;
+        size_t space = sizeof(out) - (size_t)(dst - out) - 1;
         if (!space)
             break;
 
         if (!strncmp(src, "##P", 3) && Q_isdigit(src[3])) {
             src += 3;
-            playernum = 0;
+            int playernum = 0;
             while (Q_isdigit(*src))
                 playernum = playernum * 10 + (*src++ - '0');
 
             if (playernum < MAX_CLIENTS) {
                 const char *name = cl.clientinfo[playernum].name;
-                size_t len = strlen(name);
-                if (len > space)
-                    len = space;
-                if (len > 0) {
-                    memcpy(dst, name, len);
-                    dst += len;
-                }
+                size_t len = min(strlen(name), space);
+                memcpy(dst, name, len);
+                dst += len;
             }
             continue;
         }
@@ -958,6 +950,8 @@ static void CL_HandlePrint(int level, char *s)
 {
     const char *fmt;
 
+    /* Called here rather than CL_ParseLocPrint() because ##P tokens
+     * arrive via svc_print broadcast messages, not localized prints. */
     CL_TranslatePlayerNameTokens(s, MAX_STRING_CHARS);
 
     if (level != PRINT_CHAT) {
