@@ -160,7 +160,9 @@ typedef enum {
 #if !defined(GAME3_INCLUDE)
 
 #define CS_MAX_STRING_LENGTH 96
+#define CS_MAX_STRING_LENGTH_OLD 64
 typedef char configstring_t[CS_MAX_STRING_LENGTH];
+typedef char* configstring_ptr_t;
 
 #endif // !defined(GAME3_INCLUDE)
 
@@ -1683,6 +1685,8 @@ typedef struct {
     uint16_t    gamestyle;
 
     uint16_t    end;
+
+    size_t      configstring_size;
 } cs_remap_t;
 
 extern const cs_remap_t     cs_remap_old;

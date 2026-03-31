@@ -1482,7 +1482,9 @@ const cs_remap_t cs_remap_old = {
     .cdloopcount = -1,
     .gamestyle   = -1,
 
-    .end         = MAX_CONFIGSTRINGS_OLD
+    .end         = MAX_CONFIGSTRINGS_OLD,
+
+    .configstring_size = CS_MAX_STRING_LENGTH_OLD
 };
 
 const cs_remap_t cs_remap_rerelease = {
@@ -1513,7 +1515,9 @@ const cs_remap_t cs_remap_rerelease = {
     .cdloopcount = CS_CD_LOOP_COUNT,
     .gamestyle   = CS_GAME_STYLE,
 
-    .end         = MAX_CONFIGSTRINGS
+    .end         = MAX_CONFIGSTRINGS,
+
+    .configstring_size = CS_MAX_STRING_LENGTH
 };
 
 const cs_remap_t cs_remap_q2pro_new = {
@@ -1544,5 +1548,7 @@ const cs_remap_t cs_remap_q2pro_new = {
     .cdloopcount = -1,
     .gamestyle   = -1,
 
-    .end         = MAX_CONFIGSTRINGS_EX
+    .end         = MAX_CONFIGSTRINGS_EX,
+
+    .configstring_size = CS_MAX_STRING_LENGTH_OLD
 };

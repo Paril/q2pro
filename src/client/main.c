@@ -327,6 +327,18 @@ void CL_ClientCommand(const char *string)
 
 /*
 ===================
+CL_Configstrings_init
+
+precondition: csr has been set. Initializes the array of configstrings so that they point to the right place in memory.
+*/
+void CL_Configstrings_init(void) {
+    for (size_t i = 0; i < MAX_CONFIGSTRINGS; i++) {
+        cl.configstrings[i] = cl.configstring_mem + i * cl.csr.configstring_size;
+    }
+}
+
+/*
+===================
 CL_ForwardToServer
 
 adds the current command line as a clc_stringcmd to the client message.

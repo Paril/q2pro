@@ -651,17 +651,20 @@ void CL_PrepRefresh(void)
     CL_SetSky();
 
     // load wheel data
-    int n;
-    for (n = cl.csr.wheelweapons, i = 0; i < MAX_WHEEL_ITEMS * 3; i++, n++) {
-        if (*cl.configstrings[n]) {
-            CL_LoadWheelEntry(n, cl.configstrings[n]);
+    // az: doesn't make sense to access configstrings that don't exist
+    if (cl.csr.extended) {
+        int n;
+        for (n = cl.csr.wheelweapons, i = 0; i < MAX_WHEEL_ITEMS * 3; i++, n++) {
+            if (*cl.configstrings[n]) {
+                CL_LoadWheelEntry(n, cl.configstrings[n]);
+            }
         }
-    }
 
-    // load shadow lights
-    for (n = cl.csr.shadowlights, i = 0; i < MAX_SHADOW_LIGHTS; i++, n++) {
-        if (*cl.configstrings[n]) {
-            CS_LoadShadowLight(n, cl.configstrings[n]);
+        // load shadow lights
+        for (n = cl.csr.shadowlights, i = 0; i < MAX_SHADOW_LIGHTS; i++, n++) {
+            if (*cl.configstrings[n]) {
+                CS_LoadShadowLight(n, cl.configstrings[n]);
+            }
         }
     }
 

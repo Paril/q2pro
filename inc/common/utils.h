@@ -107,12 +107,12 @@ char *UTF8_TranslitString(const char *src);
 static inline size_t Com_ConfigstringSize(const cs_remap_t *csr, int cs)
 {
     if (cs >= CS_STATUSBAR && cs < csr->airaccel)
-        return CS_MAX_STRING_LENGTH * (csr->airaccel - cs);
+        return csr->configstring_size * (csr->airaccel - cs);
 
     if (cs >= csr->general && cs < csr->end)
-        return CS_MAX_STRING_LENGTH * (csr->end - cs);
+        return csr->configstring_size * (csr->end - cs);
 
-    return CS_MAX_STRING_LENGTH;
+    return csr->configstring_size;
 }
 
 typedef struct {

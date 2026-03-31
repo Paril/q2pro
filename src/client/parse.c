@@ -708,6 +708,15 @@ static void CL_ParseServerData(const q2proto_svc_serverdata_t *serverdata)
             cl.csr = cs_remap_rerelease;
         else if (cl.game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED)
             cl.csr = cs_remap_q2pro_new;
+
+        /*
+         * az: hack. rerelease protocol forces all configstrings to be 96 characters long.
+         * setting this to the default in the given cs_remap (potentially 64) causes ParseConfigstring to
+         * overwrite the last 32 bytes of the previous index on the CS_GENERAL + 1/CS_STATUSBAR + 1 ranges.
+         * now this case is rare, it only happens if we're running a non-rerelease dll on repro.
+        */
+        cl.csr.configstring_size = CS_MAX_STRING_LENGTH;
+
         cl.psFlags |= MSG_PS_RERELEASE | MSG_PS_EXTENSIONS;
         if (cl.game_api == Q2PROTO_GAME_Q2PRO_EXTENDED_V2)
             cl.psFlags |= MSG_PS_EXTENSIONS_2;
@@ -762,6 +771,8 @@ static void CL_ParseServerData(const q2proto_svc_serverdata_t *serverdata)
     }
 
     cl.max_stats = (cl.game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED_V2) ? MAX_STATS_NEW : MAX_STATS_OLD;
+
+    CL_Configstrings_init();
 
     // Load cgame (after we know all the timings)
     CG_Load(cl.gamedir, cl.game_api == Q2PROTO_GAME_RERELEASE);
