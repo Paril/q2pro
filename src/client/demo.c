@@ -984,17 +984,17 @@ void CL_EmitDemoSnapshot(void)
 
     // configstrings
     for (i = 0; i < cl.csr.end; i++) {
-        from = cl.baseconfigstrings[i];
+        from = (char*)cl.baseconfigstrings + i * cl.csr.configstring_size;
         to = cl.configstrings[i];
 
-        if (!strcmp(from, to))
+        if (!strncmp(from, to, cl.csr.configstring_size))
             continue;
 
         char* string = cl.configstrings[i];
         q2proto_svc_configstring_t *cfgstr = &configstrings[gamestate.num_configstrings++];
         cfgstr->index = i;
         cfgstr->value.str = string;
-        cfgstr->value.len = Q_strnlen(string, CS_MAX_STRING_LENGTH);
+        cfgstr->value.len = Q_strnlen(string, cl.csr.configstring_size);
     }
 
     /* baselines, for more robustness
@@ -1101,7 +1101,7 @@ void CL_FirstDemoFrame(void)
     Com_DPrintf("[%d] first frame\n", cl.frame.number);
 
     // save base configstrings
-    memcpy(cl.baseconfigstrings, cl.configstrings, sizeof(cl.baseconfigstrings[0]) * cl.csr.end);
+    memcpy(cl.baseconfigstrings, cl.configstring_mem, sizeof cl.baseconfigstrings);
 
     // obtain file length and offset of the second frame
     len = FS_Length(cls.demo.playback);
@@ -1147,6 +1147,7 @@ static void CL_Seek_f(void)
     int64_t dest;
     bool byte_seek, back_seek;
     char *from, *to;
+    size_t maxlen;
 
     if (Cmd_Argc() < 2) {
         Com_Printf("Usage: %s [+-]<timespec|percent>[%%]\n", Cmd_Argv(0));
@@ -1246,14 +1247,17 @@ static void CL_Seek_f(void)
 
             // reset configstrings
             for (i = 0; i < cl.csr.end; i++) {
-                from = cl.baseconfigstrings[i];
+                from = (char*)cl.baseconfigstrings + i * cl.csr.configstring_size;
                 to = cl.configstrings[i];
 
-                if (!strcmp(from, to))
+                if (!strncmp(from, to, cl.csr.configstring_size))
                     continue;
 
                 Q_SetBit(cl.dcs, i);
-                strcpy(to, from);
+
+
+                maxlen = Com_ConfigstringSize(&cl.csr, i);
+                Q_strlcpy(to, from, maxlen);
             }
 
             SZ_InitRead(&msg_read, snap->data, snap->msglen);

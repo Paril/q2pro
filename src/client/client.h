@@ -809,7 +809,6 @@ void CL_RegisterSounds(void);
 void CL_RegisterBspModels(void);
 void CL_RegisterVWepModels(void);
 void CL_PrepRefresh(void);
-void CL_Configstrings_init(void);
 void CL_UpdateConfigstring(int index);
 
 //

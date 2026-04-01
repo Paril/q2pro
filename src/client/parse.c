@@ -94,6 +94,18 @@ static void apply_entity_delta(entity_state_t *to, int number, const q2proto_ent
         to->scale = delta_state->scale / 16.f;
 }
 
+/*
+===================
+CL_Configstrings_init
+
+precondition: csr has been set. Initializes the array of configstrings so that they point to the right place in memory.
+*/
+static void CL_Configstrings_init(void) {
+    for (size_t i = 0; i < MAX_CONFIGSTRINGS; i++) {
+        cl.configstrings[i] = cl.configstring_mem + i * cl.csr.configstring_size;
+    }
+}
+
 static void CL_ParseDeltaEntity(server_frame_t           *frame,
                                 int                      newnum,
                                 const entity_state_t     *old,
