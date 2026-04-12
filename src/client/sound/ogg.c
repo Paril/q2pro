@@ -807,14 +807,14 @@ static const cmdreg_t c_ogg[] = {
 
 void OGG_Init(void)
 {
-    ogg_enable = Cvar_Get("ogg_enable", "1", 0);
+    ogg_enable = Cvar_Get("ogg_enable", "1", CVAR_ARCHIVE);
     ogg_enable->changed = ogg_enable_changed;
-    ogg_volume = Cvar_Get("ogg_volume", "1", 0);
+    ogg_volume = Cvar_Get("ogg_volume", "1", CVAR_ARCHIVE);
     ogg_volume->changed = ogg_volume_changed;
-    ogg_shuffle = Cvar_Get("ogg_shuffle", "0", 0);
-    ogg_menu_track = Cvar_Get("ogg_menu_track", "77", 0);
+    ogg_shuffle = Cvar_Get("ogg_shuffle", "0", CVAR_ARCHIVE);
+    ogg_menu_track = Cvar_Get("ogg_menu_track", "77", CVAR_ARCHIVE);
     ogg_menu_track->changed = ogg_menu_track_changed;
-    ogg_remap_tracks = Cvar_Get("ogg_remap_tracks", "1", 0);
+    ogg_remap_tracks = Cvar_Get("ogg_remap_tracks", "1", CVAR_ARCHIVE);
     ogg_remap_tracks->changed = ogg_remap_tracks_changed;
 
     Cmd_Register(c_ogg);
