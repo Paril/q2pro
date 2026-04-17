@@ -975,7 +975,8 @@ static void CL_HandlePrint(int level, char *s)
     CL_CheckForIP(s);
 
     // disable notify
-    if (!cl_chat_notify->integer || (cl_cgame_notify->integer && cl.csr.extended)) {
+    bool use_cgame_notify = cl_cgame_notify->integer && cl.csr.extended;
+    if (!cl_chat_notify->integer || use_cgame_notify) {
         Con_SkipNotify(true);
     }
 
@@ -989,8 +990,8 @@ static void CL_HandlePrint(int level, char *s)
 
     Com_LPrintf(PRINT_TALK, fmt, s);
 
-    if (cl_cgame_notify->integer && cl.csr.extended) {
-	cgame->NotifyMessage(0, s, level == PRINT_CHAT);
+    if (use_cgame_notify) {
+        cgame->NotifyMessage(0, s, level == PRINT_CHAT);
     }
 
     Con_SkipNotify(false);
