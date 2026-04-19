@@ -89,6 +89,33 @@ begin video
     values "rendering backend" gl_shaders legacy shaders
 end
 
+
+begin weapons
+    title "Weapon Bindings"
+    bind "blaster" "use Blaster"
+    bind "shotgun" "use Shotgun"
+    bind "super shotgun" "use Super Shotgun"
+    bind "machinegun" "use Machinegun"
+    bind "chaingun" "use Chaingun"
+    bind "grenade launcher" "use Grenade Launcher"
+    bind "rocket launcher" "use Rocket Launcher"
+    bind "hyperblaster" "use HyperBlaster"
+    bind "railgun" "use Railgun"
+    bind "bfg10k" "use BFG10K"
+    bind "grenades" "use Grenades"
+    blank
+    bind "grapple/chainfist" "use Grapple"
+    bind "etf rifle" "use ETF Rifle"
+    bind "trap" "use Trap"
+    bind "tesla" "use Tesla"
+    bind "prox launcher" "use Prox Launcher"
+    bind "plasma beam" "use Plasma Beam"
+    blank
+    bind "ionripper" "use Ionripper"
+    bind "phalanx" "use Phalanx"
+    bind "disruptor" "use Disruptor"
+end
+
 begin options
     //title "Options"
     banner m_banner_options
@@ -156,6 +183,14 @@ begin crosshair
     range "alpha channel" ch_alpha 0 1
 end
 
+begin chathud
+    title "Chat HUD"
+    values "use chat hud" scr_chathud "no" "yes" "only switchable"
+    range "chat hud x" scr_chathud_x -128 128 8
+    range "chat hud y" scr_chathud_y -128 128 8
+    range "max lines" scr_chathud_lines 4 8 1
+end
+
 begin screen
     title "Screen Setup"
     range "screen size" viewsize 40 100 10
@@ -163,11 +198,12 @@ begin screen
     values "demo bar" scr_demobar no yes verbose
     range "HUD opacity" scr_alpha 0 1
     range "console opacity" con_alpha 0 1
-    pairs "HUD scale" scr_scale auto 0 1x 1 2x 2 4x 4
-    pairs "console scale" con_scale auto 0 1x 1 2x 2 4x 4
-    pairs "menu scale" ui_scale auto 0 1x 1 2x 2 4x 4
+    pairs "HUD scale" scr_scale auto 0 1x 1 2x 2 3x 3 4x 4
+    pairs "console scale" con_scale auto 0 1x 1 2x 2 3x 3 4x 4
+    pairs "menu scale" ui_scale auto 0 1x 1 2x 2 3x 3 4x 4
     blank
     action --align "crosshair setup..." pushmenu crosshair
+    action --align "chat hud..." pushmenu chathud
 end
 
 begin downloads
@@ -355,6 +391,9 @@ begin keys
     bind "pause game" pause
     bind "scoreboard" score
     bind "chat" messagemode
+    bind "weapon wheel" +wheel
+    bind "item wheel" +wheel2
+    bind "holster" +holster
     blank
     action --align "legacy keys..." pushmenu legacykeys
 end
@@ -371,17 +410,3 @@ begin legacykeys
     bind "keyboard look" +klook
 end
 
-begin weapons
-    title "Weapon Bindings"
-    bind "blaster" "use Blaster"
-    bind "shotgun" "use Shotgun"
-    bind "super shotgun" "use Super Shotgun"
-    bind "machinegun" "use Machinegun"
-    bind "chaingun" "use Chaingun"
-    bind "grenade launcher" "use Grenade Launcher"
-    bind "rocket launcher" "use Rocket Launcher"
-    bind "hyperblaster" "use HyperBlaster"
-    bind "railgun" "use Railgun"
-    bind "bfg10k" "use BFG10K"
-    bind "grenades" "use Grenades"
-end

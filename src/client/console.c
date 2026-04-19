@@ -456,10 +456,10 @@ void Con_Init(void)
     con_notifytime->changed(con_notifytime);
     con_notifylines = Cvar_Get("con_notifylines", "4", 0);
     con_clock = Cvar_Get("con_clock", "0", 0);
-    con_height = Cvar_Get("con_height", "0.5", 0);
+    con_height = Cvar_Get("con_height", "0.5", CVAR_ARCHIVE);
     con_speed = Cvar_Get("scr_conspeed", "3", 0);
-    con_alpha = Cvar_Get("con_alpha", "1", 0);
-    con_scale = Cvar_Get("con_scale", "0", 0);
+    con_alpha = Cvar_Get("con_alpha", "1", CVAR_ARCHIVE);
+    con_scale = Cvar_Get("con_scale", "0", CVAR_ARCHIVE);
     con_scale->changed = con_width_changed;
     con_font = Cvar_Get("con_font", "conchars", 0);
     con_font->changed = con_media_changed;

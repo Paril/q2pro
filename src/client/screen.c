@@ -1448,7 +1448,7 @@ void SCR_Init(void)
     scr_demobar = Cvar_Get("scr_demobar", "1", 0);
     scr_font = Cvar_Get("scr_font", "conchars", 0);
     scr_font->changed = scr_font_changed;
-    scr_scale = Cvar_Get("scr_scale", "0", 0);
+    scr_scale = Cvar_Get("scr_scale", "0", CVAR_ARCHIVE);
     scr_scale->changed = scr_scale_changed;
     scr_crosshair = Cvar_Get("crosshair", "3", CVAR_ARCHIVE);
     scr_crosshair->changed = scr_crosshair_changed;
@@ -1460,13 +1460,13 @@ void SCR_Init(void)
     scr_graphscale = Cvar_Get("graphscale", "1", 0);
     scr_graphshift = Cvar_Get("graphshift", "0", 0);
 
-    scr_chathud = Cvar_Get("scr_chathud", "0", 0);
-    scr_chathud_lines = Cvar_Get("scr_chathud_lines", "4", 0);
-    scr_chathud_time = Cvar_Get("scr_chathud_time", "0", 0);
+    scr_chathud = Cvar_Get("scr_chathud", "0", CVAR_ARCHIVE);
+    scr_chathud_lines = Cvar_Get("scr_chathud_lines", "4", CVAR_ARCHIVE);
+    scr_chathud_time = Cvar_Get("scr_chathud_time", "0", CVAR_ARCHIVE);
     scr_chathud_time->changed = cl_timeout_changed;
     scr_chathud_time->changed(scr_chathud_time);
-    scr_chathud_x = Cvar_Get("scr_chathud_x", "8", 0);
-    scr_chathud_y = Cvar_Get("scr_chathud_y", "-64", 0);
+    scr_chathud_x = Cvar_Get("scr_chathud_x", "8", CVAR_ARCHIVE);
+    scr_chathud_y = Cvar_Get("scr_chathud_y", "-64", CVAR_ARCHIVE);
 
     ch_health = Cvar_Get("ch_health", "0", 0);
     ch_health->changed = ch_color_changed;
