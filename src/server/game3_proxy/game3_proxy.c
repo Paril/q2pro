@@ -301,7 +301,7 @@ static void server_trace_to_game(game3_trace_t *tr, const trace_t *str)
     tr->ent = translate_edict_to_game(str->ent);
 }
 
-static game3_trace_t wrap_trace(const vec3_t start, const vec3_t mins,
+static game3_trace_t q_gameabi wrap_trace(const vec3_t start, const vec3_t mins,
                                 const vec3_t maxs, const vec3_t end,
                                 game3_edict_t *passedict, int contentmask)
 {
