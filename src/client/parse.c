@@ -1248,23 +1248,6 @@ static void CL_ParseLocPrint(const q2proto_svc_locprint_t *locprint)
 }
 
 
-#if USE_FPS
-static void set_server_fps(int value)
-{
-    cl.frametime = Com_ComputeFrametime(value);
-    cl.frametime_inv = cl.frametime.div * BASE_1_FRAMETIME;
-
-    // fix time delta
-    if (cls.state == ca_active) {
-        int delta = cl.frame.number - cl.servertime / cl.frametime.time;
-        cl.serverdelta = Q_align_down(delta, cl.frametime.div);
-    }
-
-    Com_DPrintf("client framediv=%d time=%d delta=%d\n",
-                cl.frametime.div, cl.servertime, cl.serverdelta);
-}
-#endif
-
 /*
 =====================
 CL_ParseServerMessage
