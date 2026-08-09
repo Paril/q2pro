@@ -84,7 +84,7 @@ entity_update_old(centity_t *ent, const entity_state_t *state, const vec_t *orig
     // check for new event
     if (state->event != ent->current.event)
         ent->event_frame = cl.frame.number; // new
-    else if (cl.frame.number - ent->event_frame >= cl.frametime.div)
+    else if (cl.frame.number - ent->event_frame >= cl.event_div)
         ent->event_frame = cl.frame.number; // refreshed
     else
         event = 0; // duplicated

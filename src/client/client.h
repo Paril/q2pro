@@ -345,6 +345,13 @@ typedef struct {
     frametime_t frametime;
     float       frametime_inv;  // 1/frametime
 
+#if USE_FPS
+    // how many frames an entity event stays set for, which is the server's real
+    // framediv (see SV_PrepWorldFrame). kept separate from frametime.div because
+    // that is forced to 1 for the rerelease game
+    int         event_div;
+#endif
+
     configstring_t      baseconfigstrings[MAX_CONFIGSTRINGS];
     configstring_ptr_t  configstrings[MAX_CONFIGSTRINGS];
     char                configstring_mem[MAX_CONFIGSTRINGS * sizeof(configstring_t)];

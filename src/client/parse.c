@@ -547,6 +547,10 @@ static void set_server_fps(int value)
 {
     cl.frametime = Com_ComputeFrametime(value);
     cl.frametime_inv = cl.frametime.div * BASE_1_FRAMETIME;
+#if USE_FPS
+    // save the real framediv, callers may override frametime.div
+    cl.event_div = cl.frametime.div;
+#endif
 
     // fix time delta
     if (cls.state == ca_active) {
